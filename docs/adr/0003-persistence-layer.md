@@ -99,6 +99,32 @@ first) is the only consumer of list ordering described so far, so doing it
 once in the persistence layer avoids every future screen needing to
 re-implement the same sort.
 
+## Known limitation (code review, 2026-08-07): unvalidated `id` on `saveMatch`
+
+Decision 4's dispatch — `saveMatch` treats a _present_ `id` as "update" and a
+_missing_ `id` as "create" — does not check that a supplied `id` actually
+resolves to an existing record. Passing a stale or mistyped `id` does not
+error; it silently creates a new orphan `StoredMatch` under that key instead
+of updating the record the caller intended. This is accepted as-is for #3:
+the persistence layer itself has no UI caller yet, so there is no code path
+today that could feed it a bad `id`, and adding existence-checking now would
+be speculative.
+
+This becomes a real risk once tickets #4–#7 (UI edit/resume flows) start
+calling `saveMatch` with ids read back from earlier `saveMatch`/`getMatch`
+results, navigation params, or persisted UI state. **Those tickets must
+always thread the exact `id` returned by `saveMatch`/`getMatch` through on
+every subsequent update call** — never a reconstructed, user-edited, or
+otherwise derived id — or a typo/stale reference will produce a duplicate
+match rather than a visible error.
+
+Recommended fast-follow (not required for #3): have `saveMatch` call
+`getMatch(id)` first when `id` is supplied and throw if nothing is found,
+turning a silent orphan-record bug into an immediate, loud failure. Filing
+this as a follow-up ticket is preferable to bundling it into #3, since it
+changes `saveMatch`'s error behavior and should get its own test coverage
+rather than riding along with the initial persistence implementation.
+
 ## Consequences
 
 - The persistence layer is fully testable against the public interface using
