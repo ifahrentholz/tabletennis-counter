@@ -1,0 +1,90 @@
+# Tabletennis Counter
+
+A mobile app (React Native via Expo, Managed Workflow) for keeping score
+during table tennis matches — points, sets and games, following official
+scoring rules (including deuce) — with local, on-device persistence.
+
+Targets **iOS** and **Android** only; there is no web entry point.
+
+This ticket (#1) provides the project scaffold only: an Expo app skeleton,
+the TypeScript/ESLint/Prettier toolchain, a Jest + `@testing-library/react-native`
+test harness, and CI. Domain logic, persistence and the real screens are
+built in follow-up tickets (#2–#7).
+
+## Requirements
+
+- [Node.js](https://nodejs.org/) 22.13+ (LTS 22 or 24; see `.nvmrc`)
+- npm 10+
+- For running on a simulator/emulator:
+  - iOS: Xcode + an iOS Simulator (macOS only), or the
+    [Expo Go](https://expo.dev/go) app on a physical iPhone
+  - Android: Android Studio + an Android emulator, or the
+    [Expo Go](https://expo.dev/go) app on a physical Android device
+
+## Install
+
+```sh
+npm install
+```
+
+## Run on a simulator/emulator or device
+
+Start the Metro bundler and Expo dev tools:
+
+```sh
+npx expo start
+```
+
+Then, from the terminal UI that opens:
+
+- press `i` to launch the iOS Simulator
+- press `a` to launch the Android emulator
+- or scan the QR code with the [Expo Go](https://expo.dev/go) app on a
+  physical device
+
+Shortcuts are also available directly:
+
+```sh
+npm run ios      # expo start --ios
+npm run android  # expo start --android
+```
+
+There is no `web` script — this project does not target the web.
+
+## Tests
+
+Unit tests (pure logic) and component tests
+(`@testing-library/react-native`) both run via Jest:
+
+```sh
+npm test
+```
+
+## Linting, formatting & type checking
+
+```sh
+npm run lint          # ESLint
+npm run format:check  # Prettier check (use `npm run format` to auto-fix)
+npm run typecheck      # TypeScript, no emit
+```
+
+## Continuous Integration
+
+Every push and pull request runs formatting, lint, typecheck and tests via
+GitHub Actions — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+## Documentation
+
+- [`docs/specs/`](docs/specs/) — approved feature specs.
+- [`docs/adr/`](docs/adr/) — architecture decision records (e.g. why Expo,
+  why Jest + RNTL, the Node 22.13 pin).
+- [`CHANGELOG.md`](CHANGELOG.md) — notable changes per ticket.
+
+## Project structure
+
+```
+App.tsx                 # App entry, renders the current placeholder screen
+src/
+  appInfo.ts             # Example pure-logic module (Jest unit test seam)
+  PlaceholderScreen.tsx   # Minimal placeholder screen (RNTL component test seam)
+```

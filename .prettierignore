@@ -1,0 +1,9 @@
+node_modules
+.expo
+dist
+web-build
+coverage
+package-lock.json
+# Non-app tooling directories out of scope for this ticket
+agents
+.omnigent
