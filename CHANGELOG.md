@@ -28,3 +28,26 @@ so entries are grouped as `[Unreleased]` until the first tag.
   (points, sets, games, matches, deuce rule) land in
   [#2](https://github.com/ifahrentholz/tabletennis-counter/issues/2) and
   follow-up tickets.
+
+- Pure scoring domain engine ([#2](https://github.com/ifahrentholz/tabletennis-counter/issues/2)),
+  in `src/domain/match.ts`:
+  - `Match` / `GameState` / `SetState` data model and `createMatch`, covering
+    the full point → set → game → match hierarchy as plain, immutable,
+    JSON-serializable objects.
+  - Point scoring (`addPoint`) with automatic set/game/match winner
+    resolution, including the official deuce rule (win at `pointsToWin` with
+    a minimum 2-point lead — identical for 11- and 21-point sets).
+  - Undo (`undoPoint`), scoped to the currently running set only — completed
+    sets' point history cannot be edited.
+  - Manual overrides (`adjustGameSetsWon`, `adjustMatchGamesWon`) for
+    correcting the aggregated set/game counters without recalculating
+    winners.
+  - Full lock after match completion: every mutator becomes a no-op once the
+    match has a winner.
+
+  See [ADR 0002](docs/adr/0002-scoring-domain-engine.md) for the design
+  decisions behind this module, including the interface-boundary contract
+  with the upcoming persistence work.
+
+  This is logic only — not yet wired into any UI; that starts with
+  follow-up tickets.
