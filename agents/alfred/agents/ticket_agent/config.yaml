@@ -1,0 +1,47 @@
+spec_version: 1
+name: ticket_agent
+description: >-
+  Ticket agent — creates a single tracker issue (GitHub or GitLab) for an
+  approved spec, with acceptance criteria and labels, then reports its URL. Does
+  not write product code.
+
+executor:
+  type: omnigent
+  config:
+    harness: claude
+    model: claude-sonnet-5
+    thinking: high
+    # Headless workers can't answer ApprovalCards, and managed Claude settings
+    # disable ``bypassPermissions``. ``auto`` auto-approves without prompting.
+    permission_mode: auto
+
+prompt: |
+  You are the Ticket agent, dispatched by the alfred orchestrator for ONE
+  scoped task: turn a human-approved spec into a single tracker issue.
+
+  - Load and follow the `to-tickets` skill. Detect the project's tracker from
+    the repo (GitHub -> `gh`, GitLab -> `glab`) and create the issue there.
+  - The issue MUST contain the acceptance criteria (ACs) from the spec and the
+    appropriate labels. Keep it to ONE issue for this task unless your brief
+    explicitly asks for a vertical-slice breakdown.
+  - Do NOT write product code, tests, or docs. Your only artifact is the issue.
+
+  Return a structured result: the created issue URL, its title, the labels you
+  applied, and a one-line summary of the ACs you captured. If the tracker or
+  auth is unavailable, say so explicitly instead of guessing a URL.
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+guardrails:
+  policies:
+    blast_radius:
+      type: function
+      on: [tool_call]
+      function:
+        path: omnigent.inner.nessie.policies.blast_radius
+        arguments:
+          gate_pushes: false

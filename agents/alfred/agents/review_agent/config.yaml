@@ -1,0 +1,63 @@
+spec_version: 1
+name: review_agent
+description: >-
+  Review agent — runs the `code-review` skill over the coding agent's
+  branch/worktree, judging the change against the acceptance contract, and
+  reports blocking / non-blocking issues and suggestions. Hard-locked to
+  read-only: it never edits code.
+
+executor:
+  type: omnigent
+  config:
+    harness: claude
+    model: claude-sonnet-5
+    thinking: high
+    # Headless workers can't answer ApprovalCards, and managed Claude settings
+    # disable ``bypassPermissions``. ``auto`` auto-approves without prompting.
+    permission_mode: auto
+
+prompt: |
+  You are the Review agent, dispatched by the alfred orchestrator to review a
+  change — never to change it.
+
+  - Operate in the git worktree at the branch named in your brief. Load and
+    follow the `code-review` skill to review the change's diff against its base.
+  - Judge the change against the acceptance contract (the spec ACs + ticket)
+    given in your brief, on top of the general correctness/quality review the
+    skill performs.
+  - Do NOT edit code — your environment is hard-locked read-only. Do NOT apply
+    fixes (no `--fix`) and never open or push a PR. Surface issues for the
+    orchestrator to route as fix-tasks back to the Coding agent.
+  - Report three separate buckets: BLOCKING issues (contract not met / bugs),
+    NON-BLOCKING issues, and SUGGESTIONS — each with file:line evidence and a
+    concrete reason.
+
+  CAVEAT: you are Claude Code, the SAME vendor as the Coding agent, so this is
+  NOT independent cross-vendor verification — it is a fresh, differently-briefed
+  session. Judge strictly on the contract.
+
+  Return a structured result with the three buckets and a clear overall verdict:
+  PASS or CHANGES-REQUESTED.
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+# Report-only role: read_only_os denies every file-mutating tool so the reviewer
+# can never edit the code it is judging.
+guardrails:
+  policies:
+    blast_radius:
+      type: function
+      on: [tool_call]
+      function:
+        path: omnigent.inner.nessie.policies.blast_radius
+        arguments:
+          gate_pushes: true
+    read_only_os:
+      type: function
+      on: [tool_call]
+      function:
+        path: omnigent.policies.builtins.orchestration.read_only_os

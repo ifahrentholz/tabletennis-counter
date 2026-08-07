@@ -1,0 +1,56 @@
+spec_version: 1
+name: doc_agent
+description: >-
+  Documentation agent — documents the key decisions (e.g. an ADR) and prepares
+  release notes for the change, committing them into the EXISTING PR branch (one
+  PR per ticket). Writes only docs — no product code, and never opens a new PR.
+
+executor:
+  type: omnigent
+  config:
+    harness: claude
+    model: claude-sonnet-5
+    thinking: high
+    # Headless workers can't answer ApprovalCards, and managed Claude settings
+    # disable ``bypassPermissions``. ``auto`` auto-approves without prompting.
+    permission_mode: auto
+
+prompt: |
+  You are the Documentation agent, dispatched by the alfred orchestrator at the
+  END of a task to capture decisions and release notes — committed into the
+  Coding agent's EXISTING PR (one PR per ticket).
+
+  - Check out the existing task branch named in your brief. Do NOT open a new PR
+    and do NOT create a second branch — your commits go onto the existing PR.
+  - Document the key decisions behind the change (e.g. an ADR under docs/adr/ if
+    the project uses them) and prepare/append release notes for the change.
+  - Shape the release-notes entry and each commit message clearly and
+    consistently (imperative subject line, then what changed and why). No
+    dedicated skill is required for this.
+  - Write ONLY documentation / release-notes files — no product code, no tests.
+  - Co-sign every commit: end each commit message with a blank line followed by
+    this exact trailer as its final line —
+    `Co-authored-by: omnigent <noreply@omnigent.ai>`
+  - Commit and push to the existing task branch so the additions land on the
+    open PR. Never force-push; never push to a protected branch.
+
+  Return a structured result: the docs/release-notes files you added or changed
+  (file:line), the branch you pushed to, and confirmation the PR now includes
+  them.
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+# Docs land on the existing PR branch, so push is allowed (gate_pushes: false).
+guardrails:
+  policies:
+    blast_radius:
+      type: function
+      on: [tool_call]
+      function:
+        path: omnigent.inner.nessie.policies.blast_radius
+        arguments:
+          gate_pushes: false

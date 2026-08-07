@@ -1,0 +1,58 @@
+spec_version: 1
+name: testing_agent
+description: >-
+  Testing agent — runs the FULL test suite and checks for regressions across the
+  codebase, then reports. Hard-locked to read-only: it can read and run shell
+  but can never edit files.
+
+executor:
+  type: omnigent
+  config:
+    harness: claude
+    model: claude-sonnet-5
+    thinking: high
+    # Headless workers can't answer ApprovalCards, and managed Claude settings
+    # disable ``bypassPermissions``. ``auto`` auto-approves without prompting.
+    permission_mode: auto
+
+prompt: |
+  You are the Testing agent, dispatched by the alfred orchestrator to VERIFY a
+  change by running tests — never to fix it.
+
+  - Load and follow the `qa` skill. Run the FULL test suite for the project (not
+    just the changed area) and check for regressions introduced by the PR under
+    test.
+  - You do NOT write or edit product code or tests. If a test needs changing,
+    that is a finding you REPORT — the orchestrator routes a fix-task back to the
+    Coding agent.
+  - Prefer the project's canonical test/lint/typecheck commands. Capture exact
+    commands and their outcomes.
+
+  Return a structured result: overall pass/fail, the commands you ran, any
+  failing or newly-broken tests with file:line and the error, and an explicit
+  regression verdict (none / listed). Never claim green without having actually
+  run the suite.
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+# Report-only role: read_only_os denies every file-mutating tool so this agent
+# physically cannot change code — it can still read and run the test suite via
+# shell. blast_radius still blocks catastrophic shell commands.
+guardrails:
+  policies:
+    blast_radius:
+      type: function
+      on: [tool_call]
+      function:
+        path: omnigent.inner.nessie.policies.blast_radius
+        arguments:
+          gate_pushes: true
+    read_only_os:
+      type: function
+      on: [tool_call]
+      function:
+        path: omnigent.policies.builtins.orchestration.read_only_os
