@@ -53,7 +53,7 @@ without needing extra state, keeping `SetState` minimal (just `points`,
 `isMatchComplete(match)` (`match.winner !== null`) is the single source of
 truth for "the match is over." Every mutator — `addPoint`, `undoPoint`,
 `adjustGameSetsWon`, `adjustMatchGamesWon` — checks it as its first statement
-and returns the *same* `match` reference unchanged if true, before touching
+and returns the _same_ `match` reference unchanged if true, before touching
 any nested state.
 
 This satisfies the spec's "fully frozen after match end" requirement for the
@@ -80,7 +80,7 @@ this as a ticket, and future tickets should not treat this as a bug to fix.
 
 ### 5. Undo is structurally scoped to the current set via a per-set `pointLog`
 
-`SetState.pointLog` records the order of points awarded in *that* set only,
+`SetState.pointLog` records the order of points awarded in _that_ set only,
 and `undoPoint` only ever reads/pops from `game.sets[currentSetIndex(game)]`
 — the running set. Once a set is won, a new `SetState` (with its own empty
 `pointLog`) is pushed and the completed set's array entry is never indexed
@@ -126,7 +126,7 @@ out-of-range input to reject and otherwise no-ops silently on
 invalid/terminal state (e.g. calling any mutator after match completion, or
 `undoPoint` with an empty `pointLog`).
 
-This is intentional but inconsistent in *style*: one function fails loudly on
+This is intentional but inconsistent in _style_: one function fails loudly on
 bad input, the others fail quietly. It is non-blocking and requires no action
 in this ticket, but UI implementers (tickets #4-7) that call
 `adjustGameSetsWon` with a stepper-derived `gameIndex` should be prepared to
