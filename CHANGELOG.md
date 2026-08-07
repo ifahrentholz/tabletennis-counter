@@ -51,3 +51,23 @@ so entries are grouped as `[Unreleased]` until the first tag.
 
   This is logic only — not yet wired into any UI; that starts with
   follow-up tickets.
+
+- Local persistence layer ([#3](https://github.com/ifahrentholz/tabletennis-counter/issues/3)),
+  in `src/persistence/matchStore.ts`:
+  - `StoredMatch` wraps the pure `Match` domain value with the `id` and
+    `updatedAt` fields persistence needs, without changing `Match`'s own
+    exported shape (per [ADR 0002](docs/adr/0002-scoring-domain-engine.md) §6).
+  - Public interface: `listMatches`, `getMatch`, `saveMatch`, `deleteMatch` —
+    on-device storage via `@react-native-async-storage/async-storage`, no
+    backend/account/cloud-sync.
+  - Autosave: `saveMatch` persists immediately and stamps `updatedAt`, so
+    every state change (point, set, game, manual override) can be persisted
+    the moment it happens — there is no explicit save step anywhere.
+  - `listMatches` returns matches sorted by `updatedAt` descending (newest
+    first), matching the match-list ordering the UI stories call for.
+
+  See [ADR 0003](docs/adr/0003-persistence-layer.md) for the storage engine
+  choice and interface design.
+
+  This is a persistence module only — no UI screens consume it yet; that
+  starts with follow-up tickets #4–#7.

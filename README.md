@@ -87,4 +87,8 @@ App.tsx                 # App entry, renders the current placeholder screen
 src/
   appInfo.ts             # Example pure-logic module (Jest unit test seam)
   PlaceholderScreen.tsx   # Minimal placeholder screen (RNTL component test seam)
+  domain/
+    match.ts              # Pure scoring domain engine (Match/Game/Set)
+  persistence/
+    matchStore.ts          # On-device match persistence (list/get/save/delete)
 ```
