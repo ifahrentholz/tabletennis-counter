@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "tabletennis-counter",
+      "title": "Tischtennis-Zähler-App (Expo/React Native)",
+      "stage": "ticketed",
+      "spec_url": "docs/specs/tabletennis-counter.md",
+      "spec_approved": { "by": "ingo.fahrentholz@diva-e.com", "at": "2026-08-07T00:00:00Z" },
+      "issue_url": "https://github.com/ifahrentholz/tabletennis-counter/issues/1",
+      "issue_urls": [
+        "https://github.com/ifahrentholz/tabletennis-counter/issues/1",
+        "https://github.com/ifahrentholz/tabletennis-counter/issues/2",
+        "https://github.com/ifahrentholz/tabletennis-counter/issues/3",
+        "https://github.com/ifahrentholz/tabletennis-counter/issues/4",
+        "https://github.com/ifahrentholz/tabletennis-counter/issues/5",
+        "https://github.com/ifahrentholz/tabletennis-counter/issues/6",
+        "https://github.com/ifahrentholz/tabletennis-counter/issues/7"
+      ],
+      "issues": [
+        { "url": "https://github.com/ifahrentholz/tabletennis-counter/issues/1", "title": "Project scaffolding: Expo app skeleton, test harness & CI", "labels": ["feature", "mobile", "ci", "ready-for-agent"], "blocked_by": [] },
+        { "url": "https://github.com/ifahrentholz/tabletennis-counter/issues/2", "title": "Domain model & scoring engine (incl. deuce)", "labels": ["feature", "mobile", "domain-logic", "ready-for-agent"], "blocked_by": [1] },
+        { "url": "https://github.com/ifahrentholz/tabletennis-counter/issues/3", "title": "Local persistence layer", "labels": ["feature", "mobile", "persistence", "ready-for-agent"], "blocked_by": [1] },
+        { "url": "https://github.com/ifahrentholz/tabletennis-counter/issues/4", "title": "Match setup form", "labels": ["feature", "mobile", "ui", "ready-for-agent"], "blocked_by": [1, 2, 3] },
+        { "url": "https://github.com/ifahrentholz/tabletennis-counter/issues/5", "title": "Live point counter screen", "labels": ["feature", "mobile", "ui", "ready-for-agent"], "blocked_by": [1, 2, 3] },
+        { "url": "https://github.com/ifahrentholz/tabletennis-counter/issues/6", "title": "Games & sets overview + edit mode", "labels": ["feature", "mobile", "ui", "ready-for-agent"], "blocked_by": [1, 2, 3] },
+        { "url": "https://github.com/ifahrentholz/tabletennis-counter/issues/7", "title": "Match list, resume/read-only, delete, lock enforcement", "labels": ["feature", "mobile", "ui", "ready-for-agent"], "blocked_by": [1, 2, 3] }
+      ],
+      "branch": null,
+      "pr_url": null,
+      "tests_green": false,
+      "reviewed": false,
+      "documented": false,
+      "overrides": []
+    }
+  ]
+}
