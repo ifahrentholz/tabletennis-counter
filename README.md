@@ -13,7 +13,7 @@ built in follow-up tickets (#2–#7).
 
 ## Requirements
 
-- [Node.js](https://nodejs.org/) 20+
+- [Node.js](https://nodejs.org/) 22.13+ (LTS 22 or 24; see `.nvmrc`)
 - npm 10+
 - For running on a simulator/emulator:
   - iOS: Xcode + an iOS Simulator (macOS only), or the
