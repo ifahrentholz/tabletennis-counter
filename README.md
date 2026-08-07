@@ -73,6 +73,13 @@ npm run typecheck      # TypeScript, no emit
 Every push and pull request runs formatting, lint, typecheck and tests via
 GitHub Actions — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
+## Documentation
+
+- [`docs/specs/`](docs/specs/) — approved feature specs.
+- [`docs/adr/`](docs/adr/) — architecture decision records (e.g. why Expo,
+  why Jest + RNTL, the Node 22.13 pin).
+- [`CHANGELOG.md`](CHANGELOG.md) — notable changes per ticket.
+
 ## Project structure
 
 ```
