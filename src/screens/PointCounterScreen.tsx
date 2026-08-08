@@ -17,11 +17,11 @@
  * when this screen shows the match-won banner and disables further input.
  *
  * Owns its own persistence round-trip (loads the match by id on mount,
- * `saveMatch`s immediately after every point/undo — see ADR 0003) so it can
- * be reached directly, matching the interim routing approach from ADR 0004
- * §5: the full games/sets overview screens (#6/#7) don't exist yet, so
- * `matchId` always resolves to "the current/active set" rather than one
- * picked from a list.
+ * `saveMatch`s immediately after every point/undo — see ADR 0003). It takes
+ * only `matchId` (no game/set index) because the engine only ever exposes
+ * one live set across the whole match — `SetsOverviewScreen` (#6) always
+ * routes here for "the current/active set" regardless of which set row was
+ * tapped, per ADR 0006 §2.
  */
 
 import { useEffect, useState } from 'react';
