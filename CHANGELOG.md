@@ -96,3 +96,27 @@ so entries are grouped as `[Unreleased]` until the first tag.
 
   First UI wiring of the scoring engine and persistence layer end to end;
   the games/sets overview and live point counter land in #5–#7.
+
+- Live point counter screen ([#5](https://github.com/ifahrentholz/tabletennis-counter/issues/5)),
+  in `src/screens/PointCounterScreen.tsx`:
+  - A "+1" and a "-1"/undo button per player, scoring the currently running
+    set live via `addPoint`/`undoPoint`
+    ([ADR 0002](docs/adr/0002-scoring-domain-engine.md)).
+  - Automatic set win detection at the configured point limit with the
+    official deuce rule (2-point lead), automatic game win once the
+    configured number of sets is reached, and automatic match win (and
+    match finalization) once the configured number of games is reached —
+    all delegated entirely to the scoring engine; the screen only renders
+    whatever the engine currently considers the current set/game.
+  - Every point/undo is persisted immediately via `saveMatch`
+    ([ADR 0003](docs/adr/0003-persistence-layer.md)) — no explicit save
+    button anywhere in the flow.
+  - A "Zurück" button navigates back to the match detail stub without
+    saving (autosave already covers every state change).
+  - `src/screens/MatchDetailScreen.tsx` gains a minimal "Punkte zählen"
+    button and `App.tsx`'s routing gains a `pointCounter` route — interim
+    scaffolding to reach the point counter's current/active set directly,
+    since the real games/sets overview screens land in #6/#7.
+
+  See [ADR 0005](docs/adr/0005-live-point-counter.md) for the single
+  continuous-screen win-cascade design and the interim navigation decision.
