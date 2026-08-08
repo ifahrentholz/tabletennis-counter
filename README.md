@@ -83,12 +83,15 @@ GitHub Actions — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 ## Project structure
 
 ```
-App.tsx                 # App entry, renders the current placeholder screen
+App.tsx                 # App entry; local routing between setup form and match detail
 src/
   appInfo.ts             # Example pure-logic module (Jest unit test seam)
-  PlaceholderScreen.tsx   # Minimal placeholder screen (RNTL component test seam)
+  PlaceholderScreen.tsx   # Unused ticket #1 scaffolding example (RNTL component test seam)
   domain/
     match.ts              # Pure scoring domain engine (Match/Game/Set)
   persistence/
     matchStore.ts          # On-device match persistence (list/get/save/delete)
+  screens/
+    SetupFormScreen.tsx    # Match setup form: presets, player names, "Match starten"
+    MatchDetailScreen.tsx  # Minimal match detail stub (real games overview in #5-#7)
 ```

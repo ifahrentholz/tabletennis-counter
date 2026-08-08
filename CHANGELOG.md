@@ -71,3 +71,28 @@ so entries are grouped as `[Unreleased]` until the first tag.
 
   This is a persistence module only — no UI screens consume it yet; that
   starts with follow-up tickets #4–#7.
+
+- Match setup form ([#4](https://github.com/ifahrentholz/tabletennis-counter/issues/4)),
+  in `src/screens/SetupFormScreen.tsx`:
+  - Tappable, single-select presets for point limit per set (11/21),
+    sets-per-game (3/5/6/7, default 6) and games-per-match (1/3/5, default 3) — no free-text number entry, so an invalid value can't be entered.
+  - Free-text name fields for Player A and Player B, with no autocomplete
+    and no suggestion/storage of previously used names.
+  - A single "Match starten" button that creates the match
+    (`createMatch`, [ADR 0002](docs/adr/0002-scoring-domain-engine.md)),
+    persists it immediately (`saveMatch`,
+    [ADR 0003](docs/adr/0003-persistence-layer.md)), and navigates into the
+    newly created match.
+  - `src/screens/MatchDetailScreen.tsx`: a minimal stub for the match
+    detail / games overview screen (screen 3), enough to prove navigation
+    lands on the correct match id; the real games overview lands in
+    follow-up tickets.
+  - `App.tsx` now renders the setup form (and, after a match is created,
+    the detail stub) via a small local routing state, in place of the
+    ticket #1 placeholder screen.
+
+  See [ADR 0004](docs/adr/0004-match-setup-form.md) for the preset/testing
+  design and the interim (non-library) routing decision.
+
+  First UI wiring of the scoring engine and persistence layer end to end;
+  the games/sets overview and live point counter land in #5–#7.
