@@ -71,6 +71,35 @@ save confirmation, and `onBack` performs no save of its own — it is a pure
 navigation callback, consistent with the spec's "no explicit save button
 anywhere" decision and ADR 0003's autosave design.
 
+## Known follow-ups (non-blocking)
+
+Code review for this ticket surfaced three gaps that do not block the spec's
+acceptance contract for #5, but are worth tracking as the point counter and
+its surrounding navigation mature in later tickets:
+
+1. **Per-player "-1" buttons undo the globally-last point, not necessarily
+   that player's own last point.** `undoPoint` (ADR 0002) has no player
+   argument by design — it always undoes whichever point was scored most
+   recently, regardless of which player scored it. This matches the
+   pre-existing domain contract from #2 and is arguably intended per the
+   spec's user story #7, but `PointCounterScreen` renders two visually
+   distinct per-player "-1" buttons that both perform this same global
+   action; the screen-level ambiguity this creates when a player taps the
+   _other_ player's "-1" button is not documented or covered by a test for
+   the mismatched-button case.
+2. **No error/empty state if `getMatch(matchId)` resolves to `null`.** A bad
+   or stale `matchId` (e.g. a deleted match reached via a stale route) leaves
+   the screen showing "Lade..." indefinitely, with no error message and no
+   way to navigate back out.
+3. **Possible lost-update race on rapid double-taps.** The +1/-1 buttons are
+   not disabled while a `saveMatch` call from a previous tap is still in
+   flight, so two taps in quick succession before the first state update
+   commits could both read and mutate from the same stale `match` value,
+   silently losing one of the two points.
+
+None of these were required by the spec for #5; they're recorded here so a
+future ticket can address them deliberately rather than rediscover them.
+
 ## Consequences
 
 - `src/screens/PointCounterScreen.tsx` is the first UI consumer of
