@@ -120,3 +120,34 @@ so entries are grouped as `[Unreleased]` until the first tag.
 
   See [ADR 0005](docs/adr/0005-live-point-counter.md) for the single
   continuous-screen win-cascade design and the interim navigation decision.
+
+- Games & sets overview screens with manual edit mode
+  ([#6](https://github.com/ifahrentholz/tabletennis-counter/issues/6)):
+  - `src/screens/MatchDetailScreen.tsx` is rebuilt as the real games overview
+    (screen 3): both players' aggregated `gamesWon`, a list of every game
+    played so far, and tapping a game opens its sets overview. The interim
+    `#4`/`#5` stub (and its direct "Punkte zählen" shortcut) is gone.
+  - `src/screens/SetsOverviewScreen.tsx` is a new screen 4: the same shape
+    one level down — a specific game's `setsWon` per player and a list of
+    its sets. Tapping any set opens the live point counter, since the
+    scoring engine only ever tracks one current set/game across the whole
+    match ([ADR 0002](docs/adr/0002-scoring-domain-engine.md)).
+  - `src/screens/PlayerStandRow.tsx` is a new shared row component (player
+    name + aggregated count, with an optional +/- stepper in edit mode)
+    used by both overview screens.
+  - A per-screen "Editieren"/"Fertig" toggle reveals +/- steppers that
+    manually overwrite the aggregated games/sets counters via the existing
+    `adjustMatchGamesWon`/`adjustGameSetsWon`
+    ([ADR 0002](docs/adr/0002-scoring-domain-engine.md)) — without
+    recalculating any winner — and persists immediately via `saveMatch`
+    ([ADR 0003](docs/adr/0003-persistence-layer.md)). The toggle is hidden
+    entirely once the match is won.
+  - `App.tsx`'s routing gains `setsOverview` and `gameIndex`-carrying
+    `pointCounter` variants, wiring up the full back-button chain: point
+    counter → sets overview → games overview → setup (the last hop is an
+    interim stand-in for the not-yet-built match list, #7).
+
+  See [ADR 0006](docs/adr/0006-games-sets-overview-edit-mode.md) for the
+  screen-split, single-point-counter, and edit-mode design decisions, and
+  its "Known follow-ups" section for the non-blocking gaps this ticket
+  leaves for #7.

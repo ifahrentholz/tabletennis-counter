@@ -117,6 +117,19 @@ match-level, not game-level.
    screen**, not per-player — tapping "Editieren" reveals both players'
    steppers at once. This matches the spec's "a dedicated Editieren button"
    (singular) language but wasn't explicitly required to behave this way.
+   More precisely, it is a single match-wide toggle rather than one per row
+   (per-game on the games overview, per-set on the sets overview): editing
+   one player's count doesn't let a screen show only that row's stepper.
+4. **Games overview's back button routes to `setup`, not a real match
+   list**, per decision 3 — an explicit interim placeholder, since #7 (the
+   match list) doesn't exist yet. This is expected to be replaced once #7
+   lands, not treated as a wrong call now.
+5. **`MatchDetailScreen.tsx` and `SetsOverviewScreen.tsx` each define their
+   own, near-identical `StyleSheet.create` block** rather than sharing one.
+   The two screens have the same visual shape (decision 4), so their styles
+   are a candidate for extraction into a shared `overviewStyles.ts` once a
+   third consumer or a real design system makes the duplication worth
+   removing.
 
 None of these were required by the spec for #6; they're recorded here for a
 future ticket (most plausibly #7, which introduces the match list and lock

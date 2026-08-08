@@ -83,15 +83,23 @@ GitHub Actions — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 ## Project structure
 
 ```
-App.tsx                 # App entry; local routing between setup form and match detail
+App.tsx                  # App entry; local routing: setup -> games overview ->
+                          # sets overview -> point counter
 src/
-  appInfo.ts             # Example pure-logic module (Jest unit test seam)
+  appInfo.ts              # Example pure-logic module (Jest unit test seam)
   PlaceholderScreen.tsx   # Unused ticket #1 scaffolding example (RNTL component test seam)
   domain/
     match.ts              # Pure scoring domain engine (Match/Game/Set)
   persistence/
-    matchStore.ts          # On-device match persistence (list/get/save/delete)
+    matchStore.ts         # On-device match persistence (list/get/save/delete)
   screens/
-    SetupFormScreen.tsx    # Match setup form: presets, player names, "Match starten"
-    MatchDetailScreen.tsx  # Minimal match detail stub (real games overview in #5-#7)
+    SetupFormScreen.tsx     # Match setup form: presets, player names, "Match starten"
+    MatchDetailScreen.tsx   # Games overview (screen 3): games list, per-player
+                            # gamesWon, edit mode
+    SetsOverviewScreen.tsx  # Sets overview (screen 4): a game's sets list,
+                            # per-player setsWon, edit mode
+    PlayerStandRow.tsx      # Shared player-name + count (+/- stepper in edit
+                            # mode) row, used by both overview screens
+    PointCounterScreen.tsx  # Live point counter (screen 5): +1/-1 scoring,
+                            # automatic set/game/match win detection
 ```
