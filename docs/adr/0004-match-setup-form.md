@@ -99,6 +99,27 @@ observe the pre-interaction state. `@testing-library/react-native`'s
 for this repo — future component tests that simulate a tap or text input
 should use `userEvent`, not `fireEvent`, for the same reason.
 
+## Known follow-ups (non-blocking)
+
+Code review for this ticket surfaced three gaps that do not block the spec's
+acceptance contract for #4, but are worth tracking as the setup flow matures
+in later tickets:
+
+1. **No re-entrancy guard on "Match starten".** The button does not disable
+   itself (or otherwise guard against a second tap) while `createMatch`/
+   `saveMatch` are in flight, so a rapid double-tap could persist two
+   separate matches from a single submission.
+2. **No error handling if `saveMatch` rejects.** `SetupFormScreen` awaits
+   `saveMatch` but does not catch a rejection (e.g. an `AsyncStorage`
+   failure); today that surfaces as an unhandled promise rejection instead
+   of user-facing feedback.
+3. **Empty player names are accepted.** Neither name field is validated
+   before submission, so "Match starten" succeeds with a blank
+   `playerAName`/`playerBName`.
+
+None of these were required by the spec for #4; they're recorded here so a
+future ticket can address them deliberately rather than rediscover them.
+
 ## Consequences
 
 - `src/screens/SetupFormScreen.tsx` and `src/screens/MatchDetailScreen.tsx`
