@@ -9,6 +9,8 @@
   (`saveMatch`, consumed here for the first time)
 - Updated: 2026-08-10 — Decision 7 added, resolving known follow-up 1 below;
   see [#12 — Setup form: re-entrancy guard on "Match starten"](https://github.com/ifahrentholz/tabletennis-counter/issues/12)
+- Updated: 2026-08-10 — Decision 8 added, resolving known follow-up 2 below;
+  see [#13 — SetupFormScreen: surface user-visible error on saveMatch failure](https://github.com/ifahrentholz/tabletennis-counter/issues/13)
 
 ## Context
 
@@ -137,6 +139,47 @@ simulate a genuine double-tap race in a component test. No follow-up ticket
 was opened for either point; both are recorded here as accepted trade-offs
 rather than gaps to fix.
 
+### 8. Failed `saveMatch` is caught and surfaced as user-visible error state, not left unhandled (resolves known follow-up 2, [#13](https://github.com/ifahrentholz/tabletennis-counter/issues/13))
+
+`handleStartMatch`'s `try` block (added in Decision 7) now has a `catch`
+alongside its existing `finally`: a rejected `saveMatch` no longer propagates
+out of the handler (which would otherwise be an unhandled promise rejection,
+since `Pressable.onPress`'s return value isn't awaited by React Native) and
+instead sets a `saveError` string, cleared again at the top of every
+subsequent submission attempt. `SetupFormScreen` renders `saveError` as an
+inline `Text` with `accessibilityRole="alert"` below the "Match starten"
+button when it is non-`null`.
+
+Clearing `saveError` at the _start_ of `handleStartMatch` — rather than only
+on success — is what makes retry-after-failure work without leaving the
+screen: the existing re-entrancy guard (Decision 7) already re-enables the
+button in its `finally` block regardless of outcome, so the player can simply
+tap "Match starten" again; the stale error disappears the moment that retry
+begins, and either a fresh error replaces it or `onMatchCreated` fires on
+success.
+
+**Review notes (non-blocking, accepted, [#13](https://github.com/ifahrentholz/tabletennis-counter/issues/13)):**
+Code review for this decision surfaced two further non-blocking points,
+accepted as-is rather than reworked in this ticket:
+
+- The `catch` in `handleStartMatch` discards the actual `saveMatch` rejection
+  reason — there is no `console.error`/logging or telemetry hook alongside
+  setting `saveError`. This meets the acceptance contract's user-visible-error
+  requirement, but means a real production failure has no trace beyond the
+  generic on-screen message, which will be hard to debug. Good candidate for
+  a future "add error logging/telemetry" follow-up ticket (not opened by this
+  ticket).
+- `SetupFormScreen.test.tsx` has two tests with the same
+  reject-and-assert-resolves setup/act shape, one in each of the two
+  `describe` blocks (~L209–235 and ~L281–298): both mock `saveMatch` to
+  reject, invoke `onPress` directly via `act`, and assert the returned
+  promise resolves rather than rejects. Kept separate across the two
+  `describe` blocks for documentation intent (each block documents a
+  different concern — re-entrancy/promise-handling vs. user-visible error
+  state) per this repo's existing test-organization convention, but is a
+  legitimate future simplification target (a shared test helper) if that
+  duplication grows.
+
 ## Known follow-ups (non-blocking)
 
 Code review for this ticket surfaced three gaps that do not block the spec's
@@ -149,10 +192,11 @@ in later tickets:
    itself (or otherwise guard against a second tap) while `createMatch`/
    `saveMatch` were in flight, so a rapid double-tap could persist two
    separate matches from a single submission.
-2. **No error handling if `saveMatch` rejects.** `SetupFormScreen` awaits
-   `saveMatch` but does not catch a rejection (e.g. an `AsyncStorage`
-   failure); today that surfaces as an unhandled promise rejection instead
-   of user-facing feedback.
+2. ~~**No error handling if `saveMatch` rejects.**~~ **Resolved in
+   [#13](https://github.com/ifahrentholz/tabletennis-counter/issues/13), see
+   Decision 8 above.** `SetupFormScreen` awaited `saveMatch` but did not
+   catch a rejection (e.g. an `AsyncStorage` failure); that surfaced as an
+   unhandled promise rejection instead of user-facing feedback.
 3. **Empty player names are accepted.** Neither name field is validated
    before submission, so "Match starten" succeeds with a blank
    `playerAName`/`playerBName`.
@@ -175,6 +219,9 @@ future ticket can address them deliberately rather than rediscover them.
   in RNTL component tests going forward, per decision 6.
 - `SetupFormScreen.tsx` gains an `isSubmittingRef` + `isSubmitting` pair and
   a `buttonDisabled` style (decision 7, [#12](https://github.com/ifahrentholz/tabletennis-counter/issues/12));
-  known follow-up 1 above is resolved. Known follow-ups 2 and 3 (error
-  handling on a rejected `saveMatch`, empty player name validation) remain
-  open for a future ticket.
+  known follow-up 1 above is resolved.
+- `SetupFormScreen.tsx` gains a `saveError` state and inline
+  `accessibilityRole="alert"` error `Text` (decision 8,
+  [#13](https://github.com/ifahrentholz/tabletennis-counter/issues/13));
+  known follow-up 2 above is resolved. Known follow-up 3 (empty player name
+  validation) remains open for a future ticket.
