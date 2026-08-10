@@ -139,3 +139,35 @@ not visually. Before/instead of merging, verify on:
   padding, since `top`/`bottom` insets on such a device are 0 (or very
   small for the status bar) and `SafeAreaView`'s additive mode should add
   effectively nothing beyond the existing `padding: 24`.
+
+## Review addendum (independent review agent)
+
+The independent review agent (not the coding agent's own self-report)
+re-ran `npx jest`, `npx tsc --noEmit` and `npx expo lint` against this
+branch and re-verified all 5 of the ticket's acceptance criteria directly
+against that live run. Verdict: **PASS** on both the Standards axis and the
+Spec axis.
+
+Two notes from that review, neither of which is a fix-task and neither of
+which is routed back to this ticket:
+
+1. **Non-blocking Standards note.** The `jest.mock('react-native-safe-area-context', ...)`
+   call added to `jest.setup.js` (decision 4 above) is one more instance of
+   the same pre-existing plain-`eslint` `no-undef` finding class already
+   present for the AsyncStorage mock at `jest.setup.js:4-5` (both call
+   `jest.mock`/`require` without an explicit Jest-globals import, which a
+   bare `eslint` run flags as undefined globals). This is not a new issue
+   class introduced by this ticket, and the canonical `npx expo lint` this
+   project actually uses (per ADR 0001) stays clean — so it's noted here
+   for completeness and left unaddressed, same as the pre-existing instance.
+
+2. **Optional future-refactor suggestion (not acted on).** All 5 screens
+   now repeat a near-verbatim `<SafeAreaView style={styles.container}
+   testID="...">` root element (decision 3 above). The review suggested a
+   shared `ScreenContainer`/`SafeAreaView` wrapper component could reduce
+   that repetition in a future refactor. This was already explicitly
+   reasoned about and deferred for this ticket's scope by decision 3 above
+   (`SafeAreaView` used consistently as a drop-in root-element replacement,
+   rather than introducing a new shared wrapper abstraction); the review's
+   note is recorded here only as a candidate for a possible future ticket,
+   not a change requested against #27.

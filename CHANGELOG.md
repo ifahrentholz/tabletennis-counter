@@ -223,3 +223,25 @@ so entries are grouped as `[Unreleased]` until the first tag.
   [ADR 0004](docs/adr/0004-match-setup-form.md) (see its new decision 8).
   Known follow-up 3 (empty player names are accepted) remains open,
   unaddressed by this ticket.
+
+- Device safe-area insets on all 5 screens
+  ([#27](https://github.com/ifahrentholz/tabletennis-counter/issues/27)):
+  - Every screen's header row (e.g. `MatchListScreen`'s "Neues Match"
+    button/title row) previously rendered underneath the notch/Dynamic
+    Island on notched devices (found via manual QA on an iPhone 17 Pro
+    simulator) because each screen's root was a plain `View` with a flat
+    `padding: 24` that never accounted for device insets.
+  - `App.tsx` now wraps its router in a single root `SafeAreaProvider`
+    (`react-native-safe-area-context@~5.7.0`, added via `npx expo
+    install`), and each of the 5 screens' (`MatchListScreen`,
+    `SetupFormScreen`, `MatchDetailScreen`, `SetsOverviewScreen`,
+    `PointCounterScreen`) root elements — including their loading-state
+    render, where they have one — changed from `View` to `SafeAreaView`.
+  - `SafeAreaView`'s default additive edges only ever add to each screen's
+    existing `padding: 24`, so a non-notched device's layout is unchanged.
+
+  See [ADR 0008](docs/adr/0008-safe-area-insets.md) for the full decision
+  record, including why `react-native-safe-area-context` and a root
+  `SafeAreaView` were chosen over a hand-rolled inset heuristic, and an
+  addendum recording the independent review's PASS verdict on both the
+  Standards and Spec axes.
