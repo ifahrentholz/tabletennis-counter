@@ -158,6 +158,28 @@ tap "Match starten" again; the stale error disappears the moment that retry
 begins, and either a fresh error replaces it or `onMatchCreated` fires on
 success.
 
+**Review notes (non-blocking, accepted, [#13](https://github.com/ifahrentholz/tabletennis-counter/issues/13)):**
+Code review for this decision surfaced two further non-blocking points,
+accepted as-is rather than reworked in this ticket:
+
+- The `catch` in `handleStartMatch` discards the actual `saveMatch` rejection
+  reason — there is no `console.error`/logging or telemetry hook alongside
+  setting `saveError`. This meets the acceptance contract's user-visible-error
+  requirement, but means a real production failure has no trace beyond the
+  generic on-screen message, which will be hard to debug. Good candidate for
+  a future "add error logging/telemetry" follow-up ticket (not opened by this
+  ticket).
+- `SetupFormScreen.test.tsx` has two tests with the same
+  reject-and-assert-resolves setup/act shape, one in each of the two
+  `describe` blocks (~L209–235 and ~L281–298): both mock `saveMatch` to
+  reject, invoke `onPress` directly via `act`, and assert the returned
+  promise resolves rather than rejects. Kept separate across the two
+  `describe` blocks for documentation intent (each block documents a
+  different concern — re-entrancy/promise-handling vs. user-visible error
+  state) per this repo's existing test-organization convention, but is a
+  legitimate future simplification target (a shared test helper) if that
+  duplication grows.
+
 ## Known follow-ups (non-blocking)
 
 Code review for this ticket surfaced three gaps that do not block the spec's
