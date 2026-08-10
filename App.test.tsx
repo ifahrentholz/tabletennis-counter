@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { render, screen, userEvent } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 
 import App from './App';
 import { addPoint, createMatch } from './src/domain/match';
@@ -8,6 +9,17 @@ import { getMatch, listMatches, saveMatch } from './src/persistence/matchStore';
 beforeEach(async () => {
   await AsyncStorage.clear();
 });
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+/** Stubs the match list's delete confirmation to immediately confirm (spec: "with confirmation"). */
+function confirmDeleteAutomatically() {
+  return jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+    buttons?.find((button) => button.text === 'Löschen')?.onPress?.();
+  });
+}
 
 async function createMatchViaSetup(user: ReturnType<typeof userEvent.setup>) {
   await user.press(await screen.findByRole('button', { name: 'Neues Match' }));
@@ -105,8 +117,9 @@ describe('App', () => {
     expect(await screen.findByLabelText('Spiele Alice')).toHaveTextContent('Spiele: 1');
   });
 
-  it('deletes a match from the match list, persisting the removal', async () => {
+  it('deletes a match from the match list, persisting the removal, once the deletion is confirmed', async () => {
     const user = userEvent.setup();
+    confirmDeleteAutomatically();
     await render(<App />);
 
     await createMatchViaSetup(user);
@@ -117,6 +130,23 @@ describe('App', () => {
 
     expect(screen.queryByRole('button', { name: 'Alice vs Bob' })).not.toBeOnTheScreen();
     expect(await listMatches()).toHaveLength(0);
+  });
+
+  it('leaves the match in the list when the delete confirmation is cancelled', async () => {
+    const user = userEvent.setup();
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.find((button) => button.text === 'Abbrechen')?.onPress?.();
+    });
+    await render(<App />);
+
+    await createMatchViaSetup(user);
+    await user.press(screen.getByRole('button', { name: 'Zurück' }));
+    await screen.findByRole('button', { name: 'Alice vs Bob' });
+
+    await user.press(screen.getByRole('button', { name: 'Alice vs Bob löschen' }));
+
+    expect(await screen.findByRole('button', { name: 'Alice vs Bob' })).toBeOnTheScreen();
+    expect(await listMatches()).toHaveLength(1);
   });
 });
 

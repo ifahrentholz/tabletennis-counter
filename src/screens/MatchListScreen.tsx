@@ -18,9 +18,12 @@
  *
  * A match can be removed via a dedicated delete action per row (the spec's
  * "swipe/delete gesture (or delete button)" — a button is used here since
- * no gesture-handling dependency exists yet in this project). Deleting
- * updates local state immediately after `deleteMatch` resolves, so the row
- * disappears without needing a full reload.
+ * no gesture-handling dependency exists yet in this project). Per the
+ * spec's "with confirmation" requirement, tapping delete first asks via a
+ * native `Alert.alert` confirmation (Abbrechen/Löschen); only confirming
+ * calls `deleteMatch` and updates local state, so the row disappears
+ * without needing a full reload. Cancelling — or dismissing the alert —
+ * leaves the match untouched.
  *
  * A single "Neues Match" action opens the setup form (#4) via
  * `onCreateMatch`, closing the loop described by the spec: launch app → see
@@ -28,7 +31,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { isMatchComplete } from '../domain/match';
 import { deleteMatch, listMatches } from '../persistence/matchStore';
@@ -58,7 +61,23 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
     };
   }, []);
 
-  async function handleDelete(id: string) {
+  function confirmDelete(label: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      Alert.alert(
+        'Match löschen',
+        `Möchtest du „${label}“ wirklich löschen?`,
+        [
+          { text: 'Abbrechen', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Löschen', style: 'destructive', onPress: () => resolve(true) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(false) },
+      );
+    });
+  }
+
+  async function handleDelete(id: string, label: string) {
+    const confirmed = await confirmDelete(label);
+    if (!confirmed) return;
     await deleteMatch(id);
     setMatches((current) => current?.filter((stored) => stored.id !== id) ?? current);
   }
@@ -95,7 +114,7 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
                   style={styles.deleteButton}
                   accessibilityRole="button"
                   accessibilityLabel={`${label} löschen`}
-                  onPress={() => handleDelete(stored.id)}
+                  onPress={() => handleDelete(stored.id, label)}
                 >
                   <Text style={styles.deleteButtonText}>Löschen</Text>
                 </Pressable>
