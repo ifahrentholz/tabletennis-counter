@@ -1,8 +1,33 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { render, screen, userEvent } from '@testing-library/react-native';
+import { act } from 'react';
+import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
 
-import { getMatch } from '../persistence/matchStore';
+import * as matchStore from '../persistence/matchStore';
+import { getMatch, listMatches } from '../persistence/matchStore';
+import type { StoredMatch } from '../persistence/matchStore';
 import { SetupFormScreen } from './SetupFormScreen';
+
+/**
+ * `screen.getByRole` resolves to the "Match starten" button's underlying
+ * host node, which does not expose `onPress` directly (it lives on the
+ * `Pressable` composite element up the tree). Re-entrancy tests below need
+ * the actual handler reference so they can invoke it directly, bypassing
+ * `userEvent`'s gesture-responder simulation (which cannot run concurrently
+ * against the same element) to reproduce a rapid multi-tap. `unstable_fiber`
+ * is the same public (if intentionally-unstable-named) escape hatch RNTL's
+ * own `fireEvent` uses internally to resolve an event to its handler.
+ */
+function getStartMatchOnPress(): () => Promise<void> {
+  const button = screen.getByRole('button', { name: 'Match starten' });
+  let fiber: any = (button as any).unstable_fiber;
+  while (fiber) {
+    if (typeof fiber.memoizedProps?.onPress === 'function') {
+      return fiber.memoizedProps.onPress;
+    }
+    fiber = fiber.return;
+  }
+  throw new Error('"Match starten" onPress handler not found');
+}
 
 beforeEach(async () => {
   await AsyncStorage.clear();
@@ -130,5 +155,79 @@ describe('SetupFormScreen "Match starten"', () => {
       setsToWinGame: 6,
       gamesToWinMatch: 3,
     });
+  });
+});
+
+describe('SetupFormScreen "Match starten" re-entrancy guard', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('persists exactly one match when the button is tapped repeatedly before the first tap settles', async () => {
+    const onMatchCreated = jest.fn();
+    await render(<SetupFormScreen onMatchCreated={onMatchCreated} />);
+    const onPress = getStartMatchOnPress();
+
+    // Invoke the onPress handler three times synchronously, inside a single
+    // `act`, before any of the resulting promises settle — this is the
+    // exact race a rapid multi-tap produces (see ADR 0004 known follow-up
+    // #1): each call's synchronous portion (through the `isSubmittingRef`
+    // check) runs before the previous call's awaited `saveMatch` settles.
+    await act(async () => {
+      await Promise.all([onPress(), onPress(), onPress()]);
+    });
+
+    expect(onMatchCreated).toHaveBeenCalledTimes(1);
+    expect(await listMatches()).toHaveLength(1);
+  });
+
+  it('disables the button while creating and saving the match, and re-enables it once saving resolves', async () => {
+    let resolveSave: (stored: StoredMatch) => void = () => {};
+    const savePromise = new Promise<StoredMatch>((resolve) => {
+      resolveSave = resolve;
+    });
+    const saveSpy = jest.spyOn(matchStore, 'saveMatch').mockReturnValue(savePromise);
+
+    const user = userEvent.setup();
+    const onMatchCreated = jest.fn();
+    await render(<SetupFormScreen onMatchCreated={onMatchCreated} />);
+
+    const button = screen.getByRole('button', { name: 'Match starten' });
+    await user.press(button);
+
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Match starten', disabled: true })).toBeOnTheScreen();
+
+    resolveSave({ id: 'test-match-id', updatedAt: Date.now(), match: {} as StoredMatch['match'] });
+    await waitFor(() => expect(onMatchCreated).toHaveBeenCalledTimes(1));
+
+    expect(
+      screen.getByRole('button', { name: 'Match starten', disabled: false }),
+    ).toBeOnTheScreen();
+  });
+
+  it('re-enables the button without calling onMatchCreated if saving rejects', async () => {
+    const error = new Error('save failed');
+    jest.spyOn(matchStore, 'saveMatch').mockRejectedValue(error);
+
+    const onMatchCreated = jest.fn();
+    await render(<SetupFormScreen onMatchCreated={onMatchCreated} />);
+    const onPress = getStartMatchOnPress();
+
+    // Invoking onPress directly (see previous test) surfaces its returned
+    // promise here so the test can await/assert its rejection, instead of it
+    // being silently discarded the way a real tap discards it (see ADR 0004
+    // known follow-up #2, which this ticket does not address).
+    let pressPromise: Promise<void> = Promise.resolve();
+    await act(async () => {
+      pressPromise = onPress();
+      await pressPromise.catch(() => {});
+    });
+    await expect(pressPromise).rejects.toThrow('save failed');
+
+    expect(
+      screen.getByRole('button', { name: 'Match starten', disabled: false }),
+    ).toBeOnTheScreen();
+    expect(onMatchCreated).not.toHaveBeenCalled();
   });
 });

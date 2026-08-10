@@ -183,3 +183,24 @@ so entries are grouped as `[Unreleased]` until the first tag.
   entry-point routing, the read-only-delegation, and the delete-confirmation
   design decisions, and its "Known follow-ups" section for non-blocking
   gaps left for future tickets.
+
+### Fixed
+
+- Re-entrancy guard on the setup form's "Match starten" button
+  ([#12](https://github.com/ifahrentholz/tabletennis-counter/issues/12)),
+  in `src/screens/SetupFormScreen.tsx`:
+  - A synchronous `isSubmittingRef` check at the top of `handleStartMatch`
+    now blocks a second invocation from starting a second
+    `createMatch`/`saveMatch` round trip while the first is still in
+    flight, closing the rapid double/triple-tap gap that could otherwise
+    persist more than one match from a single submission.
+  - The button itself now disables and dims (`buttonDisabled`, matching
+    `PointCounterScreen`'s existing disabled-button style) while the
+    create+save is in flight, and always re-enables afterwards — on
+    success or on a rejected `saveMatch` — via a `finally` block.
+
+  This closes known follow-up 1 from
+  [ADR 0004](docs/adr/0004-match-setup-form.md) (see its new decision 7 for
+  the ref-vs-state rationale and testing approach). Known follow-ups 2
+  (no error handling if `saveMatch` rejects) and 3 (empty player names are
+  accepted) remain open, unaddressed by this ticket.
