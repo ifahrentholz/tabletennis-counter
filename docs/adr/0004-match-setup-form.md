@@ -7,6 +7,8 @@
 - Related: [ADR 0002](0002-scoring-domain-engine.md) (`createMatch`/`MatchConfig`,
   consumed here for the first time), [ADR 0003](0003-persistence-layer.md)
   (`saveMatch`, consumed here for the first time)
+- Updated: 2026-08-10 — Decision 7 added, resolving known follow-up 1 below;
+  see [#12 — Setup form: re-entrancy guard on "Match starten"](https://github.com/ifahrentholz/tabletennis-counter/issues/12)
 
 ## Context
 
@@ -99,15 +101,53 @@ observe the pre-interaction state. `@testing-library/react-native`'s
 for this repo — future component tests that simulate a tap or text input
 should use `userEvent`, not `fireEvent`, for the same reason.
 
+### 7. Re-entrancy guard on "Match starten": a synchronous ref paired with reactive state (resolves known follow-up 1, [#12](https://github.com/ifahrentholz/tabletennis-counter/issues/12))
+
+`handleStartMatch` now checks an `isSubmittingRef` at its very top and
+returns immediately if it's already `true`, before doing anything else
+synchronous or async; `isSubmitting` state disables (and, matching
+`PointCounterScreen`'s existing disabled-button convention, dims via a
+`buttonDisabled`/`opacity: 0.4` style) the "Match starten" `Pressable`
+while `createMatch`+`saveMatch` are in flight. Both are reset in a `finally`
+block, so the button returns to normal whether `saveMatch` resolves or
+rejects (the rejection itself is unhandled beyond that reset — see known
+follow-up 2 below, which this ticket does not address).
+
+A ref, not just the `isSubmitting` state flag, guards the synchronous entry
+point because a state-only guard cannot catch a rapid second tap: the
+re-render that would flip the button's `disabled` prop happens after React
+has already finished running the synchronous portion of a second
+`handleStartMatch` call that started before that re-render. `isSubmittingRef`
+is checked and set synchronously, so it closes that window; `isSubmitting`
+state exists purely for the reactive UI (disabled prop + dimmed style), not
+as the correctness guard itself. This ref+state pair was flagged in review
+as looking like a duplicated concern and confirmed as intentional, not a
+duplication smell: the two serve different jobs (synchronous correctness
+vs. reactive rendering) that a single primitive can't cover in React.
+
+Testing this required invoking the button's `onPress` handler directly
+(via React's `unstable_fiber` escape hatch on the rendered host node) rather
+than through `userEvent.press`, because `userEvent` cannot fire multiple
+truly-concurrent presses against the same element — it serializes them,
+which would never reproduce the race the guard exists for. This was also
+flagged and accepted in review as a known, justified fragility:
+`unstable_fiber` is explicitly unstable-named and could break across a
+future React version bump, but there is no other way in this stack today to
+simulate a genuine double-tap race in a component test. No follow-up ticket
+was opened for either point; both are recorded here as accepted trade-offs
+rather than gaps to fix.
+
 ## Known follow-ups (non-blocking)
 
 Code review for this ticket surfaced three gaps that do not block the spec's
 acceptance contract for #4, but are worth tracking as the setup flow matures
 in later tickets:
 
-1. **No re-entrancy guard on "Match starten".** The button does not disable
+1. ~~**No re-entrancy guard on "Match starten".**~~ **Resolved in
+   [#12](https://github.com/ifahrentholz/tabletennis-counter/issues/12), see
+   Decision 7 above.** The button did not disable
    itself (or otherwise guard against a second tap) while `createMatch`/
-   `saveMatch` are in flight, so a rapid double-tap could persist two
+   `saveMatch` were in flight, so a rapid double-tap could persist two
    separate matches from a single submission.
 2. **No error handling if `saveMatch` rejects.** `SetupFormScreen` awaits
    `saveMatch` but does not catch a rejection (e.g. an `AsyncStorage`
@@ -133,3 +173,8 @@ future ticket can address them deliberately rather than rediscover them.
   `Route` state with a real navigator, per decision 5.
 - `userEvent` (not `fireEvent`) is the convention for simulating interactions
   in RNTL component tests going forward, per decision 6.
+- `SetupFormScreen.tsx` gains an `isSubmittingRef` + `isSubmitting` pair and
+  a `buttonDisabled` style (decision 7, [#12](https://github.com/ifahrentholz/tabletennis-counter/issues/12));
+  known follow-up 1 above is resolved. Known follow-ups 2 and 3 (error
+  handling on a rejected `saveMatch`, empty player name validation) remain
+  open for a future ticket.
