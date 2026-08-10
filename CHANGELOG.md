@@ -151,3 +151,35 @@ so entries are grouped as `[Unreleased]` until the first tag.
   screen-split, single-point-counter, and edit-mode design decisions, and
   its "Known follow-ups" section for the non-blocking gaps this ticket
   leaves for #7.
+
+- Match list as the app's entry point ([#7](https://github.com/ifahrentholz/tabletennis-counter/issues/7)),
+  in `src/screens/MatchListScreen.tsx`:
+  - Lists every persisted match (`listMatches`,
+    [ADR 0003](docs/adr/0003-persistence-layer.md)), sorted
+    most-recently-changed first, as `"playerAName vs playerBName"` with a
+    `"Läuft"`/`"Beendet"` status hint per row.
+  - Tapping any row — running or finished — resumes it via the existing
+    games overview (`MatchDetailScreen`, #6); read-only enforcement for a
+    finished match is not reimplemented here, it's inherited from the
+    existing `isMatchComplete` gates on the games/sets overview and point
+    counter screens ([ADR 0002](docs/adr/0002-scoring-domain-engine.md)),
+    regardless of whether the match was reached fresh from this list or
+    from a still-open screen.
+  - Delete per row, gated behind a native `Alert.alert` confirmation
+    (Abbrechen/Löschen, resolved via a promise so cancelling — or
+    dismissing the alert — leaves the match untouched); only confirming
+    calls the existing `deleteMatch`. This confirmation was added in a
+    review fix-round after the initial version deleted immediately on tap.
+  - A "Neues Match" action opens the setup form (#4).
+  - `App.tsx`'s initial route is now the match list (previously the setup
+    form); the setup form is reached only via "Neues Match".
+
+  Also closes [#20](https://github.com/ifahrentholz/tabletennis-counter/issues/20):
+  the games-overview back button now routes to this real match list
+  instead of the interim `setup` placeholder called out in
+  [ADR 0006](docs/adr/0006-games-sets-overview-edit-mode.md) §3/known-follow-up 4.
+
+  See [ADR 0007](docs/adr/0007-match-list-entry-point.md) for the
+  entry-point routing, the read-only-delegation, and the delete-confirmation
+  design decisions, and its "Known follow-ups" section for non-blocking
+  gaps left for future tickets.

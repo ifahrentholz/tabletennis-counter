@@ -1,11 +1,13 @@
 import { useState } from 'react';
 
 import { MatchDetailScreen } from './src/screens/MatchDetailScreen';
+import { MatchListScreen } from './src/screens/MatchListScreen';
 import { PointCounterScreen } from './src/screens/PointCounterScreen';
 import { SetsOverviewScreen } from './src/screens/SetsOverviewScreen';
 import { SetupFormScreen } from './src/screens/SetupFormScreen';
 
 type Route =
+  | { screen: 'matchList' }
   | { screen: 'setup' }
   | { screen: 'gamesOverview'; matchId: string }
   | { screen: 'setsOverview'; matchId: string; gameIndex: number }
@@ -14,15 +16,17 @@ type Route =
 /**
  * App-level routing. There is still no external navigation library (see ADR
  * 0004 §5) — a small local state machine is enough to cover the real screen
- * hierarchy #6 introduces: setup -> games overview -> sets overview -> point
- * counter, with each back button going exactly one level up (no explicit
- * save anywhere, per the spec's autosave decision). `gamesOverview`'s back
- * button routes to `setup` as an interim stand-in for the not-yet-built
- * match list (#7), matching ADR 0004 §5's pattern of using the closest
- * existing screen as a placeholder for a screen that lands later.
+ * hierarchy the app introduces: match list -> setup -> games overview ->
+ * sets overview -> point counter, with each back button going exactly one
+ * level up (no explicit save anywhere, per the spec's autosave decision).
+ * The match list (#7) is the app's real entry point and the real target for
+ * the games overview's back button — see ADR 0006 §3/known-follow-up 4 and
+ * issue #20, which explicitly called out that the previous `setup`-routing
+ * placeholder for that back button had to be replaced once this screen
+ * existed, inside this same ticket.
  */
 export default function App() {
-  const [route, setRoute] = useState<Route>({ screen: 'setup' });
+  const [route, setRoute] = useState<Route>({ screen: 'matchList' });
 
   if (route.screen === 'pointCounter') {
     return (
@@ -55,12 +59,23 @@ export default function App() {
         onOpenSetsOverview={(matchId, gameIndex) =>
           setRoute({ screen: 'setsOverview', matchId, gameIndex })
         }
-        onBack={() => setRoute({ screen: 'setup' })}
+        onBack={() => setRoute({ screen: 'matchList' })}
+      />
+    );
+  }
+
+  if (route.screen === 'setup') {
+    return (
+      <SetupFormScreen
+        onMatchCreated={(matchId) => setRoute({ screen: 'gamesOverview', matchId })}
       />
     );
   }
 
   return (
-    <SetupFormScreen onMatchCreated={(matchId) => setRoute({ screen: 'gamesOverview', matchId })} />
+    <MatchListScreen
+      onOpenMatch={(matchId) => setRoute({ screen: 'gamesOverview', matchId })}
+      onCreateMatch={() => setRoute({ screen: 'setup' })}
+    />
   );
 }
