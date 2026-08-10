@@ -180,3 +180,22 @@ describe('SetsOverviewScreen edit mode', () => {
     expect(screen.queryByRole('button', { name: 'Editieren' })).not.toBeOnTheScreen();
   });
 });
+
+describe('SetsOverviewScreen safe area (#27)', () => {
+  it('renders its content inside a device-safe-area-aware root, respecting the notch/status bar and home indicator', async () => {
+    const matchId = await seedMatch(createMatch(makeConfig()));
+    await render(
+      <SetsOverviewScreen
+        matchId={matchId}
+        gameIndex={0}
+        onOpenPointCounter={jest.fn()}
+        onBack={jest.fn()}
+      />,
+    );
+
+    const root = await screen.findByTestId('sets-overview-safe-area');
+
+    expect(root.type).toBe('RNCSafeAreaView');
+    expect(root.props.edges).toMatchObject({ top: 'additive', bottom: 'additive' });
+  });
+});

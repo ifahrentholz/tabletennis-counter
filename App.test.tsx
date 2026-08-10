@@ -150,6 +150,18 @@ describe('App', () => {
   });
 });
 
+describe('App safe area (#27)', () => {
+  it('wraps every screen in a SafeAreaProvider so root-level insets are available app-wide', async () => {
+    await render(<App />);
+
+    // The match list is the entry screen; its own root SafeAreaView proves
+    // it actually receives the insets context this provider makes
+    // available (see MatchListScreen.test.tsx for the per-screen contract).
+    const root = await screen.findByTestId('match-list-safe-area');
+    expect(root.type).toBe('RNCSafeAreaView');
+  });
+});
+
 describe('App lock enforcement for a finished match reached fresh from the match list', () => {
   it('offers no Editieren, +1, or -1 controls anywhere in the hierarchy', async () => {
     const user = userEvent.setup();

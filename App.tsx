@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { MatchDetailScreen } from './src/screens/MatchDetailScreen';
 import { MatchListScreen } from './src/screens/MatchListScreen';
@@ -24,10 +25,20 @@ type Route =
  * issue #20, which explicitly called out that the previous `setup`-routing
  * placeholder for that back button had to be replaced once this screen
  * existed, inside this same ticket.
+ *
+ * Wrapped once in `SafeAreaProvider` (issue #27) at the app root, below the
+ * status bar/notch and above every screen — each of the 5 screens then
+ * applies the resulting insets itself via a root `SafeAreaView`, so no
+ * screen renders under the device notch/Dynamic Island/status bar or home
+ * indicator.
  */
 export default function App() {
   const [route, setRoute] = useState<Route>({ screen: 'matchList' });
 
+  return <SafeAreaProvider>{renderScreen(route, setRoute)}</SafeAreaProvider>;
+}
+
+function renderScreen(route: Route, setRoute: (route: Route) => void) {
   if (route.screen === 'pointCounter') {
     return (
       <PointCounterScreen

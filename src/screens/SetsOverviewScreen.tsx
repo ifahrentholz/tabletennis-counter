@@ -24,6 +24,7 @@
 
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { adjustGameSetsWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
@@ -69,9 +70,9 @@ export function SetsOverviewScreen({
 
   if (!storedMatch) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} testID="sets-overview-safe-area">
         <Text>Lade…</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -80,7 +81,7 @@ export function SetsOverviewScreen({
   const matchComplete = isMatchComplete(match);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} testID="sets-overview-safe-area">
       <Pressable style={styles.backButton} accessibilityRole="button" onPress={onBack}>
         <Text style={styles.backButtonText}>Zurück</Text>
       </Pressable>
@@ -133,7 +134,7 @@ export function SetsOverviewScreen({
           </Pressable>
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
