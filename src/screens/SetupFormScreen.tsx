@@ -12,7 +12,7 @@
  * newly assigned id to `onMatchCreated` so the caller can navigate into it.
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { createMatch } from '../domain/match';
@@ -41,18 +41,32 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
   );
   const [playerAName, setPlayerAName] = useState('');
   const [playerBName, setPlayerBName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Mirrors `isSubmitting` but is checked synchronously at the top of
+  // `handleStartMatch`, guarding against a second tap landing before the
+  // `isSubmitting` state update has re-rendered (and thus before the
+  // button's `disabled` prop would otherwise block it).
+  const isSubmittingRef = useRef(false);
 
   async function handleStartMatch() {
-    const config: MatchConfig = {
-      pointsToWin,
-      setsToWinGame,
-      gamesToWinMatch,
-      playerAName,
-      playerBName,
-    };
-    const match = createMatch(config);
-    const stored = await saveMatch(match);
-    onMatchCreated(stored.id);
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      const config: MatchConfig = {
+        pointsToWin,
+        setsToWinGame,
+        gamesToWinMatch,
+        playerAName,
+        playerBName,
+      };
+      const match = createMatch(config);
+      const stored = await saveMatch(match);
+      onMatchCreated(stored.id);
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -98,7 +112,12 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
         autoCorrect={false}
       />
 
-      <Pressable style={styles.startButton} onPress={handleStartMatch} accessibilityRole="button">
+      <Pressable
+        style={[styles.startButton, isSubmitting && styles.buttonDisabled]}
+        onPress={handleStartMatch}
+        disabled={isSubmitting}
+        accessibilityRole="button"
+      >
         <Text style={styles.startButtonText}>Match starten</Text>
       </Pressable>
     </View>
@@ -200,5 +219,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+  },
+  buttonDisabled: {
+    opacity: 0.4,
   },
 });
