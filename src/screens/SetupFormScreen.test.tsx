@@ -297,3 +297,14 @@ describe('SetupFormScreen "Match starten" save error handling', () => {
     await expect(pressPromise).resolves.toBeUndefined();
   });
 });
+
+describe('SetupFormScreen safe area (#27)', () => {
+  it('renders its content inside a device-safe-area-aware root, respecting the notch/status bar and home indicator', async () => {
+    await render(<SetupFormScreen onMatchCreated={jest.fn()} />);
+
+    const root = await screen.findByTestId('setup-form-safe-area');
+
+    expect(root.type).toBe('RNCSafeAreaView');
+    expect(root.props.edges).toMatchObject({ top: 'additive', bottom: 'additive' });
+  });
+});

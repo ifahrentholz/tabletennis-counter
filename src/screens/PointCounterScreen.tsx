@@ -26,6 +26,7 @@
 
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { addPoint, isMatchComplete, undoPoint } from '../domain/match';
 import type { Match } from '../domain/match';
@@ -69,9 +70,9 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
 
   if (!storedMatch) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} testID="point-counter-safe-area">
         <Text>Lade…</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -87,7 +88,7 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
         : null;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} testID="point-counter-safe-area">
       <Pressable style={styles.backButton} accessibilityRole="button" onPress={onBack}>
         <Text style={styles.backButtonText}>Zurück</Text>
       </Pressable>
@@ -114,7 +115,7 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
           onUndo={() => applyAndPersist(undoPoint)}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

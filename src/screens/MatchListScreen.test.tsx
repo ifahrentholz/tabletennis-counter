@@ -202,3 +202,18 @@ describe('MatchListScreen delete (with confirmation)', () => {
     expect(await getMatch(keepId)).not.toBeNull();
   });
 });
+
+describe('MatchListScreen safe area (#27)', () => {
+  it('renders its content inside a device-safe-area-aware root, respecting the notch/status bar and home indicator', async () => {
+    await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
+
+    const root = await screen.findByTestId('match-list-safe-area');
+
+    // `RNCSafeAreaView` is the native host component `SafeAreaView` (from
+    // `react-native-safe-area-context`) renders to — asserting on it (rather
+    // than on real inset pixel values, which only a native device/simulator
+    // ever produces) is exactly what's meaningfully testable here.
+    expect(root.type).toBe('RNCSafeAreaView');
+    expect(root.props.edges).toMatchObject({ top: 'additive', bottom: 'additive' });
+  });
+});

@@ -32,6 +32,7 @@
 
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { isMatchComplete } from '../domain/match';
 import { deleteMatch, listMatches } from '../persistence/matchStore';
@@ -83,7 +84,7 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} testID="match-list-safe-area">
       <Text style={styles.title}>Meine Matches</Text>
 
       <Pressable style={styles.newMatchButton} accessibilityRole="button" onPress={onCreateMatch}>
@@ -123,7 +124,7 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
           })}
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

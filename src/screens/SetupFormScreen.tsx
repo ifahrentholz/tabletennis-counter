@@ -14,6 +14,7 @@
 
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createMatch } from '../domain/match';
 import type { MatchConfig } from '../domain/match';
@@ -84,7 +85,7 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} testID="setup-form-safe-area">
       <PresetGroup
         groupLabel="Punkte pro Satz"
         options={POINTS_TO_WIN_OPTIONS}
@@ -140,7 +141,7 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
           {saveError}
         </Text>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

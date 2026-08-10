@@ -138,3 +138,17 @@ describe('MatchDetailScreen edit mode', () => {
     expect(screen.queryByRole('button', { name: 'Editieren' })).not.toBeOnTheScreen();
   });
 });
+
+describe('MatchDetailScreen safe area (#27)', () => {
+  it('renders its content inside a device-safe-area-aware root, respecting the notch/status bar and home indicator', async () => {
+    const matchId = await seedMatch(createMatch(makeConfig()));
+    await render(
+      <MatchDetailScreen matchId={matchId} onOpenSetsOverview={jest.fn()} onBack={jest.fn()} />,
+    );
+
+    const root = await screen.findByTestId('match-detail-safe-area');
+
+    expect(root.type).toBe('RNCSafeAreaView');
+    expect(root.props.edges).toMatchObject({ top: 'additive', bottom: 'additive' });
+  });
+});

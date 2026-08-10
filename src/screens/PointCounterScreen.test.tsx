@@ -201,3 +201,15 @@ describe('PointCounterScreen back navigation', () => {
     expect(screen.queryByRole('button', { name: 'Speichern' })).not.toBeOnTheScreen();
   });
 });
+
+describe('PointCounterScreen safe area (#27)', () => {
+  it('renders its content inside a device-safe-area-aware root, respecting the notch/status bar and home indicator', async () => {
+    const matchId = await seedMatch();
+    await render(<PointCounterScreen matchId={matchId} onBack={jest.fn()} />);
+
+    const root = await screen.findByTestId('point-counter-safe-area');
+
+    expect(root.type).toBe('RNCSafeAreaView');
+    expect(root.props.edges).toMatchObject({ top: 'additive', bottom: 'additive' });
+  });
+});
