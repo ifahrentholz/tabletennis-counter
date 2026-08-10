@@ -83,8 +83,8 @@ GitHub Actions — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 ## Project structure
 
 ```
-App.tsx                  # App entry; local routing: setup -> games overview ->
-                          # sets overview -> point counter
+App.tsx                  # App entry; local routing: match list -> setup ->
+                          # games overview -> sets overview -> point counter
 src/
   appInfo.ts              # Example pure-logic module (Jest unit test seam)
   PlaceholderScreen.tsx   # Unused ticket #1 scaffolding example (RNTL component test seam)
@@ -93,6 +93,8 @@ src/
   persistence/
     matchStore.ts         # On-device match persistence (list/get/save/delete)
   screens/
+    MatchListScreen.tsx     # Match list (screen 1, app entry point): resume/
+                            # delete matches, status hint, "Neues Match"
     SetupFormScreen.tsx     # Match setup form: presets, player names, "Match starten"
     MatchDetailScreen.tsx   # Games overview (screen 3): games list, per-player
                             # gamesWon, edit mode
