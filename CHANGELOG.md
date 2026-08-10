@@ -204,3 +204,22 @@ so entries are grouped as `[Unreleased]` until the first tag.
   the ref-vs-state rationale and testing approach). Known follow-ups 2
   (no error handling if `saveMatch` rejects) and 3 (empty player names are
   accepted) remain open, unaddressed by this ticket.
+
+- User-visible error on a failed match save
+  ([#13](https://github.com/ifahrentholz/tabletennis-counter/issues/13)),
+  in `src/screens/SetupFormScreen.tsx`:
+  - `handleStartMatch` now catches a rejected `saveMatch` instead of letting
+    it propagate, setting a `saveError` message that renders as an inline
+    `Text` (`accessibilityRole="alert"`) below the "Match starten" button.
+  - `saveError` is cleared at the start of every submission attempt, so the
+    existing re-entrancy guard's button re-enable ([#12](https://github.com/ifahrentholz/tabletennis-counter/issues/12))
+    is enough for the player to retry the same submission without leaving
+    the screen — no extra "dismiss error" affordance was needed.
+  - The `Pressable`'s `onPress` return value is never awaited by React
+    Native, so a rejected `saveMatch` previously surfaced only as an
+    unhandled promise rejection; catching it here removes that entirely.
+
+  This closes known follow-up 2 from
+  [ADR 0004](docs/adr/0004-match-setup-form.md) (see its new decision 8).
+  Known follow-up 3 (empty player names are accepted) remains open,
+  unaddressed by this ticket.

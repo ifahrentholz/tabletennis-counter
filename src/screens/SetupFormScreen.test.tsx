@@ -215,19 +215,85 @@ describe('SetupFormScreen "Match starten" re-entrancy guard', () => {
     const onPress = getStartMatchOnPress();
 
     // Invoking onPress directly (see previous test) surfaces its returned
-    // promise here so the test can await/assert its rejection, instead of it
-    // being silently discarded the way a real tap discards it (see ADR 0004
-    // known follow-up #2, which this ticket does not address).
+    // promise here so the test can assert it settles without rejecting —
+    // handleStartMatch now catches a rejected `saveMatch` itself and turns it
+    // into user-facing error state (see the "save error handling" describe
+    // block below) instead of letting it propagate as an unhandled
+    // rejection the way a real tap would otherwise discard it (ADR 0004
+    // known follow-up #2, resolved by this ticket).
     let pressPromise: Promise<void> = Promise.resolve();
     await act(async () => {
       pressPromise = onPress();
-      await pressPromise.catch(() => {});
+      await pressPromise;
     });
-    await expect(pressPromise).rejects.toThrow('save failed');
+    await expect(pressPromise).resolves.toBeUndefined();
 
     expect(
       screen.getByRole('button', { name: 'Match starten', disabled: false }),
     ).toBeOnTheScreen();
     expect(onMatchCreated).not.toHaveBeenCalled();
+  });
+});
+
+describe('SetupFormScreen "Match starten" save error handling', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('shows a user-visible error message when saveMatch rejects, and does not call onMatchCreated', async () => {
+    jest.spyOn(matchStore, 'saveMatch').mockRejectedValue(new Error('save failed'));
+    const user = userEvent.setup();
+    const onMatchCreated = jest.fn();
+    await render(<SetupFormScreen onMatchCreated={onMatchCreated} />);
+
+    await user.press(screen.getByRole('button', { name: 'Match starten' }));
+
+    expect(screen.getByRole('alert')).toBeOnTheScreen();
+    expect(onMatchCreated).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: 'Match starten', disabled: false }),
+    ).toBeOnTheScreen();
+  });
+
+  it('lets the player retry after a failed save without leaving the screen', async () => {
+    const saveSpy = jest
+      .spyOn(matchStore, 'saveMatch')
+      .mockRejectedValueOnce(new Error('save failed'));
+    const user = userEvent.setup();
+    const onMatchCreated = jest.fn();
+    await render(<SetupFormScreen onMatchCreated={onMatchCreated} />);
+
+    await user.press(screen.getByRole('button', { name: 'Match starten' }));
+    expect(screen.getByRole('alert')).toBeOnTheScreen();
+
+    saveSpy.mockResolvedValueOnce({
+      id: 'retry-match-id',
+      updatedAt: Date.now(),
+      match: {} as StoredMatch['match'],
+    });
+    await user.press(screen.getByRole('button', { name: 'Match starten' }));
+
+    expect(onMatchCreated).toHaveBeenCalledTimes(1);
+    expect(onMatchCreated).toHaveBeenCalledWith('retry-match-id');
+    expect(screen.queryByRole('alert')).not.toBeOnTheScreen();
+  });
+
+  it('does not produce an unhandled promise rejection when saveMatch rejects', async () => {
+    jest.spyOn(matchStore, 'saveMatch').mockRejectedValue(new Error('save failed'));
+    const onMatchCreated = jest.fn();
+    await render(<SetupFormScreen onMatchCreated={onMatchCreated} />);
+    const onPress = getStartMatchOnPress();
+
+    // If handleStartMatch let the rejection propagate, this returned promise
+    // would reject; a real tap discards that return value entirely, so an
+    // uncaught rejection here would be an unhandled promise rejection in
+    // production. Asserting it resolves proves the rejection is fully
+    // handled inside the component instead.
+    let pressPromise: Promise<void> = Promise.resolve();
+    await act(async () => {
+      pressPromise = onPress();
+      await pressPromise;
+    });
+    await expect(pressPromise).resolves.toBeUndefined();
   });
 });

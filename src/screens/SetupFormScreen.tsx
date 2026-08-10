@@ -47,11 +47,17 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
   // `isSubmitting` state update has re-rendered (and thus before the
   // button's `disabled` prop would otherwise block it).
   const isSubmittingRef = useRef(false);
+  // User-visible message for the most recent failed submission, or `null`
+  // when there isn't one. Cleared at the start of every submission attempt
+  // so a retry doesn't leave a stale error on screen alongside a fresh
+  // in-flight request.
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   async function handleStartMatch() {
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setIsSubmitting(true);
+    setSaveError(null);
     try {
       const config: MatchConfig = {
         pointsToWin,
@@ -63,6 +69,14 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
       const match = createMatch(config);
       const stored = await saveMatch(match);
       onMatchCreated(stored.id);
+    } catch {
+      // Caught here (rather than left to propagate) so a rejected
+      // `saveMatch` never becomes an unhandled promise rejection — the
+      // `Pressable`'s `onPress` return value isn't awaited by React Native,
+      // so an uncaught rejection here would otherwise be silent. Surfacing
+      // it as `saveError` instead lets the player see what happened and
+      // retry without leaving the screen.
+      setSaveError('Match konnte nicht gespeichert werden. Bitte versuche es erneut.');
     } finally {
       isSubmittingRef.current = false;
       setIsSubmitting(false);
@@ -120,6 +134,12 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
       >
         <Text style={styles.startButtonText}>Match starten</Text>
       </Pressable>
+
+      {saveError !== null && (
+        <Text style={styles.errorText} accessibilityRole="alert">
+          {saveError}
+        </Text>
+      )}
     </View>
   );
 }
@@ -222,5 +242,9 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.4,
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 14,
   },
 });
