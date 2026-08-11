@@ -9,18 +9,20 @@ merges the PR — alfred never writes code, tests, or merges.
 ## The pipeline
 
 ```
-0 IDEA            grill-me             (alfred)
-1 SPEC            to-spec              (alfred)
-2 APPROVAL        —                    🧍 human approves the spec  ← hard gate
-3 TICKET          to-tickets           (ticket_agent  · implement)
-4 IMPLEMENT+TESTS implement (+ tdd)    (coding_agent  · implement)  ← writes code + unit tests, opens ONE PR
-5 REGRESSION      qa                   (testing_agent · review)     ← runs full suite, read-only
-6 REVIEW          code-review          (review_agent  · review)     ← reviews the branch vs. ACs, read-only
-7 DOCS+RELEASE    —                    (doc_agent     · implement)  ← ADR + release notes onto the PR
-8 PR / MERGE      —                    🧍 human merges
+0  IDEA            grill-me             (alfred)
+1  SPEC            to-spec              (alfred)
+2  APPROVAL        —                    🧍 human approves the spec  ← hard gate
+                                        🧍 + answers "visual design pass? y/n"
+3  TICKET          to-tickets           (ticket_agent  · implement)
+4  IMPLEMENT+TESTS implement (+ tdd)    (coding_agent  · implement)  ← writes code + unit tests, opens ONE PR
+4b VISUAL DESIGN   frontend-design      (design_agent  · implement)  ← OPT-IN, only on an explicit yes
+5  REGRESSION      qa                   (testing_agent · review)     ← runs full suite, read-only
+6  REVIEW          code-review          (review_agent  · review)     ← reviews the branch vs. ACs, read-only
+7  DOCS+RELEASE    —                    (doc_agent     · implement)  ← ADR + release notes onto the PR
+8  PR / MERGE      —                    🧍 human merges
 ```
 
-## Five dedicated sub-agents
+## Six dedicated sub-agents
 
 Per your decision, every workflow step (except idea/spec, which alfred runs
 itself) has its **own** sub-agent — all Claude Code (`claude-native`), each with
@@ -30,6 +32,7 @@ a focused prompt, least-privilege skill, and role-appropriate guardrails:
 |-------|-------|-------|-----------|
 | `ticket_agent`  | 3 | `to-tickets` | standard (creates issue only) |
 | `coding_agent`  | 4 | `implement` (+ `tdd`) | can write code + open PR |
+| `design_agent`  | 4b **opt-in** | `frontend-design` | can write + push; presentation-only by prompt |
 | `testing_agent` | 5 | `qa` | **`read_only_os` — hard no-edit** |
 | `review_agent`  | 6 | `code-review` | **`read_only_os` — hard no-edit** |
 | `doc_agent`     | 7 | — | writes docs onto the existing PR |
@@ -38,8 +41,62 @@ a focused prompt, least-privilege skill, and role-appropriate guardrails:
 `read_only_os` policy: they can read and run the test suite via shell but every
 file-mutating tool is denied — role separation is enforced, not just requested.
 
-**One PR per ticket:** `coding_agent` opens the PR; `doc_agent` checks out that
-same branch and commits its ADR + release notes onto it (no second PR).
+**One PR per ticket:** `coding_agent` opens the PR; `design_agent` (polish mode)
+and `doc_agent` check out that same branch and commit onto it (no second PR).
+Only a standalone design run opens its own PR.
+
+## The design agent (stage 4b — opt-in)
+
+`design_agent` lays a **visual design over UI that already exists**, using the
+`frontend-design` skill. It runs on `claude-opus-5` (visual judgement benefits
+from the stronger model; it runs rarely and briefly).
+
+**It never runs unasked.** At stage 2, alongside spec approval, alfred asks
+*"Should this change get a visual design pass? (yes / no)"* and stores the answer
+as `design` in the state file. `false` is the default, an ambiguous answer is a
+no, and alfred is instructed never to infer a yes from a ticket that merely
+sounds visual.
+
+Two entry points, one agent:
+
+| Mode | When | Branch / PR |
+|------|------|-------------|
+| `polish` | Stage 4b, right after `coding_agent`, when `design == true` | Commits onto the existing stage-4 PR branch |
+| `standalone` | The human asks for a design pass over code that already exists (shipped earlier, or on main) | Fresh branch, pushes, opens its **own** PR |
+
+A standalone run is **not** a pipeline skip: it still walks stages 0–3 (the
+"spec" is the design brief with visual ACs), and stages 5–7 still run over its
+PR. `design_standalone = true` records that no `coding_agent` stage 4 ran.
+
+### The one hard rule: presentation only
+
+The agent changes how the product **looks**, never what it **does**.
+
+- **Allowed:** stylesheets, design tokens/themes, CSS classes, markup and
+  templates in the service of layout, static assets (SVG/fonts/images), purely
+  presentational components, animation that carries no state meaning.
+- **Forbidden:** business logic, state management, data fetching, API calls,
+  routing, form submission/validation behaviour, schema work.
+- **Forbidden — user flows:** the set of screens, their order, which actions
+  exist, what is enabled, and what each control does must come out identical.
+  Re-arranging things visually on a screen is fine; adding, removing,
+  re-ordering, or re-targeting a step is not.
+- **Forbidden — tests:** it never edits or deletes a test to make it pass against
+  new markup. A test breaking on a renamed class is a signal that the change
+  reached past presentation, so the agent **stops and reports** instead. That
+  judgement call belongs to alfred, not the design agent.
+- Accessibility is part of the design, not an exception: semantics, focus order,
+  labels/ARIA, and WCAG AA contrast stay intact. If the direction would hurt
+  them, the direction changes.
+
+**Enforcement is prompt-level by explicit choice** — there is no path-based
+policy gate on `design_agent`, so it can still write anywhere the CEL workflow
+gate allows. The backstop is stage 6: when 4b ran, alfred tells `review_agent` to
+verify the design commits are presentation-only and to treat any logic,
+routing, data-flow, or user-flow drift as **BLOCKING**. If you later want this
+enforced rather than reviewed, add a CEL policy to
+`agents/design_agent/config.yaml` that ASKs on writes to logic-shaped paths
+(tests, `api/`, `server/`, `store/`, `router*`, migrations, `*.sql`).
 
 ## Two hard rules (policy-backed)
 
@@ -47,9 +104,10 @@ same branch and commits its ADR + release notes onto it (no second PR).
 2. **No implementation without a linked ticket** (GitHub or GitLab issue).
 
 Enforcement is **override-with-warning**: a CEL policy (`workflow_gate`) inspects
-every dispatch to a **repo-writing** agent (`coding_agent` / `doc_agent`). If its
-brief is missing the `SPEC-APPROVED:` marker and/or a `Ticket:` reference, the
-dispatch is escalated to the human as an **ASK** with a warning. The human may
+every dispatch to a **repo-writing** agent (`coding_agent` / `design_agent` /
+`doc_agent`). If its brief is missing the `SPEC-APPROVED:` marker and/or a
+`Ticket:` reference, the dispatch is escalated to the human as an **ASK** with a
+warning. The human may
 approve to override; overrides are logged in the workflow-state file.
 `ticket_agent` (which creates the ticket) and the read-only `testing_agent` /
 `review_agent` are not gated — so, unlike the earlier single-worker build, there
@@ -76,6 +134,13 @@ target project's committed `.claude/skills/` — exactly what this repo
 (`setup-matt-pocock-skills`) provisions for diva-e projects. alfred itself
 bundles and runs `grill-me`, `to-spec`, and `workflow`.
 
+**One exception:** `frontend-design` is bundled inside the design agent's own
+bundle (`agents/design_agent/skills/frontend-design/`). Omnigent exposes each
+bundle's `skills/` directory to its Claude harness via `--plugin-dir`, and a
+sub-agent only sees **its own** bundle — alfred's `skills/` do not reach the
+children. Bundling it there means the design agent always has its method,
+independent of what the target project ships.
+
 > Requirement: the target project must have the diva-e skill set committed under
 > `.claude/skills/` (run `setup-matt-pocock-skills` and commit it), so a
 > sub-agent's worktree carries the skills. `tdd` and `grill-me` also exist in the
@@ -99,6 +164,9 @@ agents/alfred/
   agents/
     ticket_agent/config.yaml        # stage 3 — creates the issue
     coding_agent/config.yaml        # stage 4 — code + tests, opens the PR
+    design_agent/
+      config.yaml                   # stage 4b — visual design, opt-in, opus-5
+      skills/frontend-design/       # bundled here: sub-agents only see their own bundle
     testing_agent/config.yaml       # stage 5 — full suite / regression (read-only)
     review_agent/config.yaml        # stage 6 — diff vs. contract (read-only)
     doc_agent/config.yaml           # stage 7 — ADR + release notes onto the PR
