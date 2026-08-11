@@ -19,16 +19,24 @@
  * Like `PointCounterScreen`, this screen owns its own load/persist
  * round-trip (loads by id on mount, `saveMatch`s immediately after every
  * edit) rather than lifting match state into `App`.
+ *
+ * Visually a normal app screen read at normal distance (ADR 0009), carrying
+ * the same red/black bat identity as the counter. The game currently being
+ * played is the only row marked in ball orange, because it is the only one
+ * that is happening now.
  */
 
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, Text, View } from 'react-native';
 
+import { Button } from '../components/Button';
+import { Screen } from '../components/Screen';
+import { WinnerBanner } from '../components/WinnerBanner';
 import { adjustMatchGamesWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
+import { hit, makeStyles, radius, space, stroke, type } from '../theme';
 import { PlayerStandRow } from './PlayerStandRow';
 
 export interface MatchDetailScreenProps {
@@ -42,6 +50,7 @@ export interface MatchDetailScreenProps {
 export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: MatchDetailScreenProps) {
   const [storedMatch, setStoredMatch] = useState<StoredMatch | null>(null);
   const [editing, setEditing] = useState(false);
+  const styles = useStyles();
 
   useEffect(() => {
     let cancelled = false;
@@ -62,9 +71,9 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
 
   if (!storedMatch) {
     return (
-      <SafeAreaView style={styles.container} testID="match-detail-safe-area">
-        <Text>Lade…</Text>
-      </SafeAreaView>
+      <Screen testID="match-detail-safe-area" style={styles.screen}>
+        <Text style={styles.loading}>Lade…</Text>
+      </Screen>
     );
   }
 
@@ -78,20 +87,22 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
         : null;
 
   return (
-    <SafeAreaView style={styles.container} testID="match-detail-safe-area">
-      <Pressable style={styles.backButton} accessibilityRole="button" onPress={onBack}>
-        <Text style={styles.backButtonText}>Zurück</Text>
-      </Pressable>
+    <Screen testID="match-detail-safe-area" style={styles.screen}>
+      <Button variant="quiet" label="Zurück" onPress={onBack} style={styles.backButton} />
 
       <Text style={styles.title}>
-        {match.config.playerAName} vs {match.config.playerBName}
+        <Text style={styles.titleA}>{match.config.playerAName}</Text> vs{' '}
+        <Text style={styles.titleB}>{match.config.playerBName}</Text>
       </Text>
 
-      {winnerName ? <Text style={styles.winnerBanner}>{winnerName} gewinnt das Match!</Text> : null}
+      {match.winner && winnerName ? (
+        <WinnerBanner player={match.winner} message={`${winnerName} gewinnt das Match!`} />
+      ) : null}
 
       <View style={styles.standRow}>
         <PlayerStandRow
           label="Spiele"
+          player="A"
           name={match.config.playerAName}
           value={match.gamesWon.A}
           editing={editing && !matchComplete}
@@ -100,6 +111,7 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
         />
         <PlayerStandRow
           label="Spiele"
+          player="B"
           name={match.config.playerBName}
           value={match.gamesWon.B}
           editing={editing && !matchComplete}
@@ -109,91 +121,109 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
       </View>
 
       {!matchComplete ? (
-        <Pressable
-          style={styles.editButton}
-          accessibilityRole="button"
+        <Button
+          variant="quiet"
+          label={editing ? 'Fertig' : 'Editieren'}
           onPress={() => setEditing((value) => !value)}
-        >
-          <Text style={styles.editButtonText}>{editing ? 'Fertig' : 'Editieren'}</Text>
-        </Pressable>
+          style={styles.editButton}
+        />
       ) : null}
 
       <View style={styles.list}>
-        {match.games.map((game, index) => (
-          <Pressable
-            key={index}
-            style={styles.listItem}
-            accessibilityRole="button"
-            onPress={() => onOpenSetsOverview(matchId, index)}
-          >
-            <Text style={styles.listItemText}>
-              Spiel {index + 1}: {game.setsWon.A}:{game.setsWon.B}
-              {game.winner
-                ? ` – ${game.winner === 'A' ? match.config.playerAName : match.config.playerBName} gewinnt`
-                : ''}
-            </Text>
-          </Pressable>
-        ))}
+        {match.games.map((game, index) => {
+          const isLive = !matchComplete && !game.winner && index === match.games.length - 1;
+          return (
+            <Pressable
+              key={index}
+              style={({ pressed }) => [
+                styles.listItem,
+                isLive && styles.listItemLive,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              onPress={() => onOpenSetsOverview(matchId, index)}
+            >
+              <Text style={styles.listItemText}>
+                <Text style={styles.listItemLabel}>Spiel {index + 1}</Text>
+                <Text style={styles.listItemScore}>{`: ${game.setsWon.A}:${game.setsWon.B}`}</Text>
+                {game.winner ? (
+                  <Text style={styles.listItemNote}>
+                    {` – ${game.winner === 'A' ? match.config.playerAName : match.config.playerBName} gewinnt`}
+                  </Text>
+                ) : null}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 24,
-    gap: 16,
+const useStyles = makeStyles((theme) => ({
+  screen: {
+    gap: space.lg,
+  },
+  loading: {
+    ...type.body,
+    color: theme.color.textSecondary,
   },
   backButton: {
     alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#1d4ed8',
-    fontWeight: '600',
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
+    ...type.display,
+    color: theme.color.textSecondary,
   },
-  winnerBanner: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#16a34a',
+  titleA: {
+    color: theme.player.A.ink,
+  },
+  titleB: {
+    color: theme.player.B.ink,
   },
   standRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    gap: space.md,
   },
   editButton: {
     alignSelf: 'center',
-    backgroundColor: '#1d4ed8',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  editButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
   },
   list: {
-    gap: 8,
+    gap: space.sm,
   },
   listItem: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    minHeight: hit.min,
+    justifyContent: 'center',
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.borderStrong,
+    borderRadius: radius.md,
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
+  },
+  listItemLive: {
+    borderLeftWidth: stroke.bar,
+    borderLeftColor: theme.color.accentMarker,
+    paddingLeft: space.lg - (stroke.bar - stroke.hairline),
+  },
+  pressed: {
+    opacity: 0.7,
   },
   listItemText: {
-    fontSize: 16,
+    ...type.body,
+    color: theme.color.textPrimary,
   },
-});
+  listItemLabel: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+  },
+  listItemScore: {
+    ...type.bodyStrong,
+    color: theme.color.textPrimary,
+  },
+  listItemNote: {
+    ...type.label,
+    color: theme.color.textSecondary,
+  },
+}));

@@ -28,15 +28,24 @@
  * A single "Neues Match" action opens the setup form (#4) via
  * `onCreateMatch`, closing the loop described by the spec: launch app → see
  * all matches → resume or start one.
+ *
+ * Each row stacks the two players the way a scoreboard does — the red side
+ * above the black side (ADR 0009) — so the same identity a match is played
+ * with is visible before it is opened. "Läuft" is the only place ball orange
+ * appears here, because a running match is the one thing on this screen that
+ * is happening now.
  */
 
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Pressable, Text, View } from 'react-native';
 
+import { Button } from '../components/Button';
+import { PlayerTag } from '../components/PlayerTag';
+import { Screen } from '../components/Screen';
 import { isMatchComplete } from '../domain/match';
 import { deleteMatch, listMatches } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
+import { makeStyles, radius, space, stroke, type } from '../theme';
 
 export interface MatchListScreenProps {
   /** Navigates into the games overview (screen 3) for the tapped match, running or finished. */
@@ -51,6 +60,7 @@ function labelFor(stored: StoredMatch): string {
 
 export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenProps) {
   const [matches, setMatches] = useState<StoredMatch[] | null>(null);
+  const styles = useStyles();
 
   useEffect(() => {
     let cancelled = false;
@@ -84,15 +94,13 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
   }
 
   return (
-    <SafeAreaView style={styles.container} testID="match-list-safe-area">
+    <Screen testID="match-list-safe-area" style={styles.screen}>
       <Text style={styles.title}>Meine Matches</Text>
 
-      <Pressable style={styles.newMatchButton} accessibilityRole="button" onPress={onCreateMatch}>
-        <Text style={styles.newMatchButtonText}>Neues Match</Text>
-      </Pressable>
+      <Button label="Neues Match" onPress={onCreateMatch} style={styles.newMatchButton} />
 
       {matches === null ? (
-        <Text>Lade…</Text>
+        <Text style={styles.loading}>Lade…</Text>
       ) : matches.length === 0 ? (
         <Text style={styles.emptyText}>Noch keine Matches vorhanden.</Text>
       ) : (
@@ -103,93 +111,91 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
             return (
               <View key={stored.id} style={styles.listItem}>
                 <Pressable
-                  style={styles.matchButton}
+                  style={({ pressed }) => [styles.matchButton, pressed && styles.pressed]}
                   accessibilityRole="button"
                   accessibilityLabel={label}
                   onPress={() => onOpenMatch(stored.id)}
                 >
-                  <Text style={styles.listItemText}>{label}</Text>
-                  <Text style={styles.statusText}>{complete ? 'Beendet' : 'Läuft'}</Text>
+                  <View style={styles.matchHeadline}>
+                    <PlayerTag player="A" name={stored.match.config.playerAName} />
+                    <Text style={complete ? styles.statusDone : styles.statusRunning}>
+                      {complete ? 'Beendet' : 'Läuft'}
+                    </Text>
+                  </View>
+                  <PlayerTag player="B" name={stored.match.config.playerBName} />
                 </Pressable>
-                <Pressable
-                  style={styles.deleteButton}
-                  accessibilityRole="button"
+                <Button
+                  variant="quiet"
+                  label="Löschen"
                   accessibilityLabel={`${label} löschen`}
                   onPress={() => handleDelete(stored.id, label)}
-                >
-                  <Text style={styles.deleteButtonText}>Löschen</Text>
-                </Pressable>
+                  style={styles.deleteButton}
+                />
               </View>
             );
           })}
         </View>
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 24,
-    gap: 16,
+const useStyles = makeStyles((theme) => ({
+  screen: {
+    gap: space.lg,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
+    ...type.display,
+    color: theme.color.textPrimary,
   },
   newMatchButton: {
-    alignSelf: 'center',
-    backgroundColor: '#16a34a',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    alignSelf: 'stretch',
   },
-  newMatchButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+  loading: {
+    ...type.body,
+    color: theme.color.textSecondary,
   },
   emptyText: {
-    textAlign: 'center',
-    color: '#555',
-    fontSize: 16,
+    ...type.body,
+    color: theme.color.textSecondary,
   },
   list: {
-    gap: 8,
+    gap: space.sm,
   },
   listItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    alignItems: 'stretch',
+    gap: space.sm,
   },
   matchButton: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    justifyContent: 'center',
+    gap: space.xs,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.borderStrong,
+    borderRadius: radius.md,
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
   },
-  listItemText: {
-    fontSize: 16,
-    fontWeight: '600',
+  matchHeadline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.sm,
   },
-  statusText: {
-    fontSize: 13,
-    color: '#555',
+  statusRunning: {
+    ...type.micro,
+    color: theme.color.accent,
+  },
+  statusDone: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   deleteButton: {
-    backgroundColor: '#dc2626',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: space.md,
   },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
+}));

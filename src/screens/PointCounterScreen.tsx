@@ -22,16 +22,29 @@
  * one live set across the whole match — `SetsOverviewScreen` (#6) always
  * routes here for "the current/active set" regardless of which set row was
  * tapped, per ADR 0006 §2.
+ *
+ * Visually this is the one screen that is a piece of sports equipment rather
+ * than an app (ADR 0009): the phone stands next to the table and is read
+ * from about a metre away in a badly lit hall. So the screen is laid out as
+ * the table seen from above — two halves split by the table's centre line,
+ * each half owning one player's score and one side of the bat as its
+ * point-scoring face.
  */
 
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, View } from 'react-native';
 
+import { Button } from '../components/Button';
+import { PlayerTag } from '../components/PlayerTag';
+import { RubberFace } from '../components/RubberFace';
+import { ScoreNumeral } from '../components/ScoreNumeral';
+import { Screen } from '../components/Screen';
+import { WinnerBanner } from '../components/WinnerBanner';
 import { addPoint, isMatchComplete, undoPoint } from '../domain/match';
-import type { Match } from '../domain/match';
+import type { Match, Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
+import { makeStyles, space, stroke, type } from '../theme';
 
 export interface PointCounterScreenProps {
   matchId: string;
@@ -50,6 +63,7 @@ function currentSetOf(match: Match) {
 
 export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps) {
   const [storedMatch, setStoredMatch] = useState<StoredMatch | null>(null);
+  const styles = useStyles();
 
   useEffect(() => {
     let cancelled = false;
@@ -70,9 +84,9 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
 
   if (!storedMatch) {
     return (
-      <SafeAreaView style={styles.container} testID="point-counter-safe-area">
-        <Text>Lade…</Text>
-      </SafeAreaView>
+      <Screen testID="point-counter-safe-area" style={styles.screen}>
+        <Text style={styles.loading}>Lade…</Text>
+      </Screen>
     );
   }
 
@@ -88,15 +102,24 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
         : null;
 
   return (
-    <SafeAreaView style={styles.container} testID="point-counter-safe-area">
-      <Pressable style={styles.backButton} accessibilityRole="button" onPress={onBack}>
-        <Text style={styles.backButtonText}>Zurück</Text>
-      </Pressable>
+    <Screen testID="point-counter-safe-area" style={styles.screen}>
+      <View style={styles.topRow}>
+        <Button variant="quiet" label="Zurück" onPress={onBack} />
+        {/* Ball orange means "this is where you are right now" and nothing
+            else — so the position marker loses its colour the moment the
+            match is over. */}
+        <Text style={[styles.position, matchComplete ? styles.positionDone : styles.positionLive]}>
+          Satz {currentGame.sets.length} · Spiel {match.games.length}
+        </Text>
+      </View>
 
-      {winnerName ? <Text style={styles.winnerBanner}>{winnerName} gewinnt das Match!</Text> : null}
+      {match.winner && winnerName ? (
+        <WinnerBanner player={match.winner} message={`${winnerName} gewinnt das Match!`} />
+      ) : null}
 
       <View style={styles.scoreRow}>
         <PlayerColumn
+          player="A"
           name={match.config.playerAName}
           points={currentSet.points.A}
           setsWon={currentGame.setsWon.A}
@@ -105,7 +128,11 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
           onPoint={() => applyAndPersist((m) => addPoint(m, 'A'))}
           onUndo={() => applyAndPersist(undoPoint)}
         />
+        {/* The table's centre line: it is what divides one player's half
+            from the other's on a real table, so it divides them here too. */}
+        <View style={styles.centreLine} />
         <PlayerColumn
+          player="B"
           name={match.config.playerBName}
           points={currentSet.points.B}
           setsWon={currentGame.setsWon.B}
@@ -115,11 +142,12 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
           onUndo={() => applyAndPersist(undoPoint)}
         />
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 interface PlayerColumnProps {
+  player: Player;
   name: string;
   points: number;
   setsWon: number;
@@ -130,6 +158,7 @@ interface PlayerColumnProps {
 }
 
 function PlayerColumn({
+  player,
   name,
   points,
   setsWon,
@@ -138,113 +167,91 @@ function PlayerColumn({
   onPoint,
   onUndo,
 }: PlayerColumnProps) {
+  const styles = useStyles();
+
   return (
     <View style={styles.playerColumn}>
-      <Text style={styles.playerName}>{name}</Text>
-      <Text style={styles.pointsValue} accessibilityLabel={`Punktestand ${name}`}>
-        {points}
-      </Text>
-      <Text style={styles.subScore} accessibilityLabel={`Sätze ${name}`}>
-        Sätze: {setsWon}
-      </Text>
-      <Text style={styles.subScore} accessibilityLabel={`Spiele ${name}`}>
-        Spiele: {gamesWon}
-      </Text>
+      <View style={styles.readBlock}>
+        <PlayerTag player={player} name={name} size="title" chip={false} />
+        <ScoreNumeral player={player} name={name} points={points} />
+        <Text style={styles.subScore} accessibilityLabel={`Sätze ${name}`}>
+          Sätze: {setsWon}
+        </Text>
+        <Text style={styles.subScore} accessibilityLabel={`Spiele ${name}`}>
+          Spiele: {gamesWon}
+        </Text>
+      </View>
 
-      <Pressable
-        accessibilityRole="button"
+      <RubberFace
+        player={player}
+        label="+1"
         accessibilityLabel={`${name} +1`}
         disabled={disabled}
-        style={[styles.pointButton, disabled && styles.buttonDisabled]}
         onPress={onPoint}
-      >
-        <Text style={styles.pointButtonText}>+1</Text>
-      </Pressable>
+      />
 
-      <Pressable
-        accessibilityRole="button"
+      <Button
+        variant="quiet"
+        size="large"
+        label="-1"
         accessibilityLabel={`${name} -1`}
         disabled={disabled}
-        style={[styles.undoButton, disabled && styles.buttonDisabled]}
         onPress={onUndo}
-      >
-        <Text style={styles.undoButtonText}>-1</Text>
-      </Pressable>
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 24,
-    gap: 16,
+const useStyles = makeStyles((theme) => ({
+  screen: {
+    gap: space.md,
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  loading: {
+    ...type.body,
+    color: theme.color.textSecondary,
   },
-  backButtonText: {
-    fontSize: 16,
-    color: '#1d4ed8',
-    fontWeight: '600',
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.md,
   },
-  winnerBanner: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#16a34a',
+  position: {
+    ...type.micro,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'right',
+    flexShrink: 1,
+  },
+  positionLive: {
+    color: theme.color.accent,
+  },
+  positionDone: {
+    color: theme.color.textSecondary,
   },
   scoreRow: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    alignItems: 'stretch',
+    gap: space.md,
+  },
+  centreLine: {
+    width: stroke.line,
+    alignSelf: 'stretch',
+    backgroundColor: theme.color.centreLine,
   },
   playerColumn: {
+    flex: 1,
+    gap: space.sm,
+  },
+  readBlock: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-  },
-  playerName: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  pointsValue: {
-    fontSize: 48,
-    fontWeight: '700',
+    gap: space.xs,
   },
   subScore: {
-    fontSize: 14,
-    color: '#555',
+    ...type.micro,
+    fontVariant: ['tabular-nums'],
+    color: theme.color.textSecondary,
   },
-  pointButton: {
-    marginTop: 16,
-    backgroundColor: '#16a34a',
-    borderRadius: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  pointButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  undoButton: {
-    backgroundColor: '#dc2626',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  undoButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-});
+}));
