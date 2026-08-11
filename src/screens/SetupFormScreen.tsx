@@ -10,15 +10,23 @@
  * "Match starten" button that creates the match, persists it immediately via
  * the persistence layer (`../persistence/matchStore.ts`), and hands the
  * newly assigned id to `onMatchCreated` so the caller can navigate into it.
+ *
+ * This is where the red/black bat identity is handed out (ADR 0009): the two
+ * name fields are labelled with the same chips that then follow both players
+ * through every other screen, so "Spieler A is the red side" is learned
+ * before the first serve rather than guessed at the table.
  */
 
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
+import { Button } from '../components/Button';
+import { PlayerTag } from '../components/PlayerTag';
+import { Screen } from '../components/Screen';
 import { createMatch } from '../domain/match';
 import type { MatchConfig } from '../domain/match';
 import { saveMatch } from '../persistence/matchStore';
+import { hit, makeStyles, radius, space, stroke, type, useTheme } from '../theme';
 
 const POINTS_TO_WIN_OPTIONS = [11, 21] as const;
 const SETS_TO_WIN_GAME_OPTIONS = [3, 5, 6, 7] as const;
@@ -53,6 +61,8 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
   // so a retry doesn't leave a stale error on screen alongside a fresh
   // in-flight request.
   const [saveError, setSaveError] = useState<string | null>(null);
+  const theme = useTheme();
+  const styles = useStyles();
 
   async function handleStartMatch() {
     if (isSubmittingRef.current) return;
@@ -85,7 +95,7 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
   }
 
   return (
-    <SafeAreaView style={styles.container} testID="setup-form-safe-area">
+    <Screen testID="setup-form-safe-area" style={styles.screen}>
       <PresetGroup
         groupLabel="Punkte pro Satz"
         options={POINTS_TO_WIN_OPTIONS}
@@ -105,43 +115,50 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
         onChange={setGamesToWinMatch}
       />
 
-      <Text style={styles.label}>Spieler A</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Name Spieler A"
-        accessibilityLabel="Name Spieler A"
-        value={playerAName}
-        onChangeText={setPlayerAName}
-        autoComplete="off"
-        autoCorrect={false}
-      />
+      <View style={styles.field}>
+        <PlayerTag player="A" name="Spieler A" />
+        <TextInput
+          style={styles.input}
+          placeholder="Name Spieler A"
+          placeholderTextColor={theme.color.textSecondary}
+          accessibilityLabel="Name Spieler A"
+          value={playerAName}
+          onChangeText={setPlayerAName}
+          autoComplete="off"
+          autoCorrect={false}
+        />
+      </View>
 
-      <Text style={styles.label}>Spieler B</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Name Spieler B"
-        accessibilityLabel="Name Spieler B"
-        value={playerBName}
-        onChangeText={setPlayerBName}
-        autoComplete="off"
-        autoCorrect={false}
-      />
+      <View style={styles.field}>
+        <PlayerTag player="B" name="Spieler B" />
+        <TextInput
+          style={styles.input}
+          placeholder="Name Spieler B"
+          placeholderTextColor={theme.color.textSecondary}
+          accessibilityLabel="Name Spieler B"
+          value={playerBName}
+          onChangeText={setPlayerBName}
+          autoComplete="off"
+          autoCorrect={false}
+        />
+      </View>
 
-      <Pressable
-        style={[styles.startButton, isSubmitting && styles.buttonDisabled]}
+      <Button
+        label="Match starten"
         onPress={handleStartMatch}
         disabled={isSubmitting}
-        accessibilityRole="button"
-      >
-        <Text style={styles.startButtonText}>Match starten</Text>
-      </Pressable>
+        style={styles.startButton}
+      />
 
       {saveError !== null && (
-        <Text style={styles.errorText} accessibilityRole="alert">
-          {saveError}
-        </Text>
+        <View style={styles.notice}>
+          <View style={styles.noticeBar} />
+          <Text style={styles.noticeText} accessibilityRole="alert">
+            {saveError}
+          </Text>
+        </View>
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -159,6 +176,8 @@ function PresetGroup<T extends number>({
   value,
   onChange,
 }: PresetGroupProps<T>) {
+  const styles = useStyles();
+
   return (
     <View style={styles.presetGroup}>
       <Text style={styles.label}>{groupLabel}</Text>
@@ -171,7 +190,11 @@ function PresetGroup<T extends number>({
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
               accessibilityLabel={`${groupLabel} ${option}`}
-              style={[styles.presetOption, selected && styles.presetOptionSelected]}
+              style={({ pressed }) => [
+                styles.presetOption,
+                selected && styles.presetOptionSelected,
+                pressed && styles.pressed,
+              ]}
               onPress={() => onChange(option)}
             >
               <Text style={[styles.presetOptionText, selected && styles.presetOptionTextSelected]}>
@@ -185,67 +208,85 @@ function PresetGroup<T extends number>({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 24,
-    gap: 16,
+const useStyles = makeStyles((theme) => ({
+  screen: {
+    gap: space.md,
   },
   presetGroup: {
-    gap: 8,
+    gap: space.sm,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...type.micro,
+    color: theme.color.textSecondary,
   },
   presetRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: space.sm,
   },
   presetOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    minWidth: hit.comfortable,
+    minHeight: hit.min,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.lg,
+    borderRadius: radius.sm,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.borderStrong,
+    backgroundColor: theme.color.surfaceMuted,
   },
   presetOptionSelected: {
-    backgroundColor: '#1d4ed8',
-    borderColor: '#1d4ed8',
+    backgroundColor: theme.color.actionFill,
+    borderColor: theme.color.actionFill,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   presetOptionText: {
-    fontSize: 16,
-    color: '#111',
+    ...type.bodyStrong,
+    color: theme.color.textPrimary,
   },
   presetOptionTextSelected: {
-    color: '#fff',
+    color: theme.color.actionInk,
+  },
+  field: {
+    gap: space.sm,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
+    ...type.body,
+    minHeight: hit.comfortable,
+    color: theme.color.textPrimary,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.borderStrong,
+    borderRadius: radius.sm,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
   },
   startButton: {
-    marginTop: 16,
-    backgroundColor: '#16a34a',
-    borderRadius: 8,
-    paddingVertical: 14,
+    alignSelf: 'stretch',
+    marginTop: space.sm,
+  },
+  // Errors are not red: red is player identity now, and orange means "you
+  // are here". A failed save is called out by weight and a hard rule
+  // instead of by hue.
+  notice: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: space.md,
+    backgroundColor: theme.color.surfaceMuted,
+    borderRadius: radius.sm,
+    paddingVertical: space.md,
+    paddingRight: space.md,
+    overflow: 'hidden',
   },
-  startButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
+  noticeBar: {
+    alignSelf: 'stretch',
+    width: stroke.bar,
+    backgroundColor: theme.color.textPrimary,
   },
-  buttonDisabled: {
-    opacity: 0.4,
+  noticeText: {
+    ...type.label,
+    color: theme.color.textPrimary,
+    flexShrink: 1,
   },
-  errorText: {
-    color: '#dc2626',
-    fontSize: 14,
-  },
-});
+}));

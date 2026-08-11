@@ -20,16 +20,23 @@
  *
  * Like `PointCounterScreen` and `MatchDetailScreen`, this screen owns its
  * own load/persist round-trip.
+ *
+ * Visually a normal app screen read at normal distance (ADR 0009), carrying
+ * the same red/black bat identity as the counter. The set currently being
+ * played is the only row marked in ball orange, because it is the only one
+ * that is happening now.
  */
 
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, Text, View } from 'react-native';
 
+import { Button } from '../components/Button';
+import { Screen } from '../components/Screen';
 import { adjustGameSetsWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
+import { hit, makeStyles, radius, space, stroke, type } from '../theme';
 import { PlayerStandRow } from './PlayerStandRow';
 
 export interface SetsOverviewScreenProps {
@@ -50,6 +57,7 @@ export function SetsOverviewScreen({
 }: SetsOverviewScreenProps) {
   const [storedMatch, setStoredMatch] = useState<StoredMatch | null>(null);
   const [editing, setEditing] = useState(false);
+  const styles = useStyles();
 
   useEffect(() => {
     let cancelled = false;
@@ -70,27 +78,27 @@ export function SetsOverviewScreen({
 
   if (!storedMatch) {
     return (
-      <SafeAreaView style={styles.container} testID="sets-overview-safe-area">
-        <Text>Lade…</Text>
-      </SafeAreaView>
+      <Screen testID="sets-overview-safe-area" style={styles.screen}>
+        <Text style={styles.loading}>Lade…</Text>
+      </Screen>
     );
   }
 
   const { match } = storedMatch;
   const game = match.games[gameIndex];
   const matchComplete = isMatchComplete(match);
+  const isCurrentGame = gameIndex === match.games.length - 1;
 
   return (
-    <SafeAreaView style={styles.container} testID="sets-overview-safe-area">
-      <Pressable style={styles.backButton} accessibilityRole="button" onPress={onBack}>
-        <Text style={styles.backButtonText}>Zurück</Text>
-      </Pressable>
+    <Screen testID="sets-overview-safe-area" style={styles.screen}>
+      <Button variant="quiet" label="Zurück" onPress={onBack} style={styles.backButton} />
 
       <Text style={styles.title}>Spiel {gameIndex + 1}</Text>
 
       <View style={styles.standRow}>
         <PlayerStandRow
           label="Sätze"
+          player="A"
           name={match.config.playerAName}
           value={game.setsWon.A}
           editing={editing && !matchComplete}
@@ -99,6 +107,7 @@ export function SetsOverviewScreen({
         />
         <PlayerStandRow
           label="Sätze"
+          player="B"
           name={match.config.playerBName}
           value={game.setsWon.B}
           editing={editing && !matchComplete}
@@ -108,85 +117,105 @@ export function SetsOverviewScreen({
       </View>
 
       {!matchComplete ? (
-        <Pressable
-          style={styles.editButton}
-          accessibilityRole="button"
+        <Button
+          variant="quiet"
+          label={editing ? 'Fertig' : 'Editieren'}
           onPress={() => setEditing((value) => !value)}
-        >
-          <Text style={styles.editButtonText}>{editing ? 'Fertig' : 'Editieren'}</Text>
-        </Pressable>
+          style={styles.editButton}
+        />
       ) : null}
 
       <View style={styles.list}>
-        {game.sets.map((set, index) => (
-          <Pressable
-            key={index}
-            style={styles.listItem}
-            accessibilityRole="button"
-            onPress={() => onOpenPointCounter(matchId)}
-          >
-            <Text style={styles.listItemText}>
-              Satz {index + 1}: {set.points.A}:{set.points.B}
-              {set.winner
-                ? ` – ${set.winner === 'A' ? match.config.playerAName : match.config.playerBName} gewinnt`
-                : ''}
-            </Text>
-          </Pressable>
-        ))}
+        {game.sets.map((set, index) => {
+          const isLive =
+            !matchComplete && isCurrentGame && !set.winner && index === game.sets.length - 1;
+          return (
+            <Pressable
+              key={index}
+              style={({ pressed }) => [
+                styles.listItem,
+                isLive && styles.listItemLive,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              onPress={() => onOpenPointCounter(matchId)}
+            >
+              <Text style={styles.listItemText}>
+                <Text style={styles.listItemLabel}>Satz {index + 1}</Text>
+                <Text style={styles.listItemScore}>{`: ${set.points.A}:${set.points.B}`}</Text>
+                {set.winner ? (
+                  <Text style={styles.listItemNote}>
+                    {` – ${set.winner === 'A' ? match.config.playerAName : match.config.playerBName} gewinnt`}
+                  </Text>
+                ) : null}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 24,
-    gap: 16,
+const useStyles = makeStyles((theme) => ({
+  screen: {
+    gap: space.lg,
+  },
+  loading: {
+    ...type.body,
+    color: theme.color.textSecondary,
   },
   backButton: {
     alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#1d4ed8',
-    fontWeight: '600',
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
+    ...type.display,
+    color: theme.color.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   standRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    gap: space.md,
   },
   editButton: {
     alignSelf: 'center',
-    backgroundColor: '#1d4ed8',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  editButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
   },
   list: {
-    gap: 8,
+    gap: space.sm,
   },
   listItem: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    minHeight: hit.min,
+    justifyContent: 'center',
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.borderStrong,
+    borderRadius: radius.md,
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
+  },
+  listItemLive: {
+    borderLeftWidth: stroke.bar,
+    borderLeftColor: theme.color.accentMarker,
+    paddingLeft: space.lg - (stroke.bar - stroke.hairline),
+  },
+  pressed: {
+    opacity: 0.7,
   },
   listItemText: {
-    fontSize: 16,
+    ...type.body,
+    color: theme.color.textPrimary,
   },
-});
+  listItemLabel: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+  },
+  listItemScore: {
+    ...type.bodyStrong,
+    color: theme.color.textPrimary,
+  },
+  listItemNote: {
+    ...type.label,
+    color: theme.color.textSecondary,
+  },
+}));
