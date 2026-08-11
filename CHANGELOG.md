@@ -233,7 +233,7 @@ so entries are grouped as `[Unreleased]` until the first tag.
     `padding: 24` that never accounted for device insets.
   - `App.tsx` now wraps its router in a single root `SafeAreaProvider`
     (`react-native-safe-area-context@~5.7.0`, added via `npx expo
-    install`), and each of the 5 screens' (`MatchListScreen`,
+install`), and each of the 5 screens' (`MatchListScreen`,
     `SetupFormScreen`, `MatchDetailScreen`, `SetsOverviewScreen`,
     `PointCounterScreen`) root elements — including their loading-state
     render, where they have one — changed from `View` to `SafeAreaView`.
@@ -245,3 +245,45 @@ so entries are grouped as `[Unreleased]` until the first tag.
   `SafeAreaView` were chosen over a hand-rolled inset heuristic, and an
   addendum recording the independent review's PASS verdict on both the
   Standards and Spec axes.
+
+- Visual design system — the bat identity
+  ([#29](https://github.com/ifahrentholz/tabletennis-counter/issues/29)):
+  - The app had no design of its own: each of the 5 screen files carried its
+    own `StyleSheet.create` repeating the same hex literals, and those values
+    (`#16a34a`, `#dc2626`, `#1d4ed8`) were the Tailwind default palette.
+  - New `src/theme/` is now the single source of truth (colour, spacing,
+    radius, stroke, hit area and type scale for both colour schemes), and no
+    screen file holds a literal colour any more.
+  - Palette and signature element come from the physical material of the
+    sport: a competition bat has one **red** and one **black** rubber, so
+    player A is the red side and player B the black side, carried through
+    every screen where both players appear; the surface is the deep
+    blue-green of a competition table; ball orange appears **only** as a
+    "this is where you are right now" marker (the running game/set).
+  - Because red is now player identity, destructive controls (undo, delete)
+    are de-coloured stamped labels rather than red, and the setup form's save
+    error is called out by weight and a hard rule instead of by hue.
+  - `PointCounterScreen` is treated as a piece of sports equipment rather
+    than an app screen — the phone stands next to the table and is read from
+    about a metre away. It is laid out as the table seen from above: two
+    halves split by the centre line, each with a 92pt tabular-numeral score
+    (previously 48pt) and one side of the bat as a 96pt-tall point-scoring
+    face. Every control is at least 44×44pt.
+  - Light **and** dark schemes follow the OS appearance setting via
+    `useColorScheme()`; `app.json`'s `userInterfaceStyle` changed from
+    `"light"` to `"automatic"`. Dark is not an inversion of light: in the
+    light scheme the black side is drawn as contour and type, never as a
+    filled area.
+  - New purely presentational building blocks in `src/components/`
+    (`Screen`, `Button`, `RubberFace`, `PlayerTag`, `ScoreNumeral`,
+    `WinnerBanner`) — props in, view out, no state and no logic.
+  - Two pieces of motion, both with the built-in `Animated` and both
+    meaning-bearing: the score numeral lands when a point is awarded, and the
+    winner banner fades in once at the moment the match is won. Nothing runs
+    continuously.
+
+  Presentation only: no change to behaviour, state, persistence, data flow,
+  routing, form behaviour or user flows, no test edited, no new dependency.
+  See [ADR 0009](docs/adr/0009-visual-design-system.md) for the full decision
+  record, including the measured WCAG contrast ratios for both schemes and
+  the follow-ups deliberately left alone.

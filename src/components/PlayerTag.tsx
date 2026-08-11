@@ -26,14 +26,20 @@ export interface PlayerTagProps {
   name: string;
   /** `micro` for list rows and forms, `title` for the live counter. */
   size?: 'micro' | 'title';
+  /**
+   * Drop the chip where the screen already states the identity at full
+   * size — on the live counter the 96pt rubber face below the name says it
+   * far louder, and a 14pt chip is invisible from a metre away anyway.
+   */
+  chip?: boolean;
 }
 
-export function PlayerTag({ player, name, size = 'micro' }: PlayerTagProps) {
+export function PlayerTag({ player, name, size = 'micro', chip = true }: PlayerTagProps) {
   const styles = useStyles();
 
   return (
     <View style={styles.container}>
-      <View style={[styles.chip, player === 'A' ? styles.chipA : styles.chipB]} />
+      {chip ? <View style={[styles.chip, player === 'A' ? styles.chipA : styles.chipB]} /> : null}
       <Text
         style={[
           size === 'title' ? styles.nameTitle : styles.nameMicro,

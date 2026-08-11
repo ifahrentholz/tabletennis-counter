@@ -128,7 +128,10 @@ const dark: Theme = {
 const light: Theme = {
   scheme: 'light',
   color: {
-    bg: '#EBF1EF',
+    // The pale, distinctly green-tinted grey of a sports-hall floor under
+    // daylight — not an off-white, so the light scheme reads as a place
+    // rather than as blank paper.
+    bg: '#E3EDE9',
     surface: '#FFFFFF',
     surfaceMuted: '#F4F8F6',
     border: '#C6D6D2',

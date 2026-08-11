@@ -172,7 +172,7 @@ function PlayerColumn({
   return (
     <View style={styles.playerColumn}>
       <View style={styles.readBlock}>
-        <PlayerTag player={player} name={name} size="title" />
+        <PlayerTag player={player} name={name} size="title" chip={false} />
         <ScoreNumeral player={player} name={name} points={points} />
         <Text style={styles.subScore} accessibilityLabel={`Sätze ${name}`}>
           Sätze: {setsWon}
