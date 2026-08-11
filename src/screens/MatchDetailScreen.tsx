@@ -36,7 +36,7 @@ import { adjustMatchGamesWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
-import { hit, makeStyles, radius, space, stroke, type } from '../theme';
+import { makeStyles, radius, space, stroke, type } from '../theme';
 import { PlayerStandRow } from './PlayerStandRow';
 
 export interface MatchDetailScreenProps {
@@ -88,7 +88,10 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
 
   return (
     <Screen testID="match-detail-safe-area" style={styles.screen}>
-      <Button variant="quiet" label="Zurück" onPress={onBack} style={styles.backButton} />
+      <View style={styles.headerRow}>
+        <Button variant="quiet" label="Zurück" onPress={onBack} style={styles.backButton} />
+        <Text style={styles.eyebrow}>Spiele</Text>
+      </View>
 
       <Text style={styles.title}>
         <Text style={styles.titleA}>{match.config.playerAName}</Text> vs{' '}
@@ -129,32 +132,47 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
         />
       ) : null}
 
-      <View style={styles.list}>
-        {match.games.map((game, index) => {
-          const isLive = !matchComplete && !game.winner && index === match.games.length - 1;
-          return (
-            <Pressable
-              key={index}
-              style={({ pressed }) => [
-                styles.listItem,
-                isLive && styles.listItemLive,
-                pressed && styles.pressed,
-              ]}
-              accessibilityRole="button"
-              onPress={() => onOpenSetsOverview(matchId, index)}
-            >
-              <Text style={styles.listItemText}>
-                <Text style={styles.listItemLabel}>Spiel {index + 1}</Text>
-                <Text style={styles.listItemScore}>{`: ${game.setsWon.A}:${game.setsWon.B}`}</Text>
-                {game.winner ? (
-                  <Text style={styles.listItemNote}>
-                    {` – ${game.winner === 'A' ? match.config.playerAName : match.config.playerBName} gewinnt`}
-                  </Text>
-                ) : null}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View style={styles.listSection}>
+        <View style={styles.listHeader}>
+          <Text style={styles.listHeaderText}>Spielverlauf</Text>
+          <Text style={styles.listHeaderText}>Sätze</Text>
+        </View>
+        <View style={styles.list}>
+          {match.games.map((game, index) => {
+            const isLive = !matchComplete && !game.winner && index === match.games.length - 1;
+            return (
+              <Pressable
+                key={index}
+                style={({ pressed }) => [
+                  styles.listItem,
+                  isLive && styles.listItemLive,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                onPress={() => onOpenSetsOverview(matchId, index)}
+              >
+                <View style={styles.listItemCopy}>
+                  <View style={styles.listItemHeading}>
+                    <Text style={styles.listItemLabel}>Spiel {index + 1}</Text>
+                    {isLive ? <Text style={styles.liveLabel}>Live</Text> : null}
+                  </View>
+                  {game.winner ? (
+                    <Text style={styles.listItemNote}>
+                      {game.winner === 'A' ? match.config.playerAName : match.config.playerBName}{' '}
+                      gewinnt
+                    </Text>
+                  ) : null}
+                </View>
+                <Text style={styles.listItemScore}>
+                  {game.setsWon.A}:{game.setsWon.B}
+                </Text>
+                <Text style={styles.chevron} accessibilityElementsHidden>
+                  ›
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </Screen>
   );
@@ -162,14 +180,24 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
 
 const useStyles = makeStyles((theme) => ({
   screen: {
-    gap: space.lg,
+    gap: space.md,
   },
   loading: {
     ...type.body,
     color: theme.color.textSecondary,
   },
   backButton: {
-    alignSelf: 'flex-start',
+    minWidth: 86,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.md,
+  },
+  eyebrow: {
+    ...type.micro,
+    color: theme.color.accent,
   },
   title: {
     ...type.display,
@@ -183,23 +211,38 @@ const useStyles = makeStyles((theme) => ({
   },
   standRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    gap: space.md,
+    gap: space.sm,
   },
   editButton: {
-    alignSelf: 'center',
+    alignSelf: 'flex-end',
+  },
+  listSection: {
+    gap: space.sm,
+    flex: 1,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: space.sm,
+  },
+  listHeaderText: {
+    ...type.micro,
+    color: theme.color.textSecondary,
   },
   list: {
     gap: space.sm,
   },
   listItem: {
-    minHeight: hit.min,
-    justifyContent: 'center',
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
     backgroundColor: theme.color.surface,
     borderWidth: stroke.hairline,
-    borderColor: theme.color.borderStrong,
-    borderRadius: radius.md,
-    paddingVertical: space.md,
+    borderColor: theme.color.border,
+    borderRadius: radius.lg,
+    paddingVertical: space.sm,
     paddingHorizontal: space.lg,
   },
   listItemLive: {
@@ -208,22 +251,39 @@ const useStyles = makeStyles((theme) => ({
     paddingLeft: space.lg - (stroke.bar - stroke.hairline),
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.76,
+    transform: [{ scale: 0.99 }],
   },
-  listItemText: {
-    ...type.body,
-    color: theme.color.textPrimary,
+  listItemCopy: {
+    flex: 1,
+    gap: space.xs,
+    minWidth: 0,
+  },
+  listItemHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
   },
   listItemLabel: {
+    ...type.bodyStrong,
+    color: theme.color.textPrimary,
+  },
+  liveLabel: {
     ...type.micro,
-    color: theme.color.textSecondary,
+    color: theme.color.accent,
   },
   listItemScore: {
-    ...type.bodyStrong,
+    ...type.stand,
+    fontSize: 30,
+    lineHeight: 34,
     color: theme.color.textPrimary,
   },
   listItemNote: {
     ...type.label,
+    color: theme.color.textSecondary,
+  },
+  chevron: {
+    ...type.title,
     color: theme.color.textSecondary,
   },
 }));

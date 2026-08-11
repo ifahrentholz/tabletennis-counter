@@ -45,7 +45,7 @@ import { Screen } from '../components/Screen';
 import { isMatchComplete } from '../domain/match';
 import { deleteMatch, listMatches } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
-import { makeStyles, radius, space, stroke, type } from '../theme';
+import { hit, makeStyles, radius, space, stroke, type } from '../theme';
 
 export interface MatchListScreenProps {
   /** Navigates into the games overview (screen 3) for the tapped match, running or finished. */
@@ -95,14 +95,23 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
 
   return (
     <Screen testID="match-list-safe-area" style={styles.screen}>
-      <Text style={styles.title}>Meine Matches</Text>
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>Match Center</Text>
+        <Text style={styles.title}>Meine Matches</Text>
+      </View>
 
       <Button label="Neues Match" onPress={onCreateMatch} style={styles.newMatchButton} />
 
       {matches === null ? (
         <Text style={styles.loading}>Lade…</Text>
       ) : matches.length === 0 ? (
-        <Text style={styles.emptyText}>Noch keine Matches vorhanden.</Text>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyScore} accessibilityElementsHidden>
+            0 : 0
+          </Text>
+          <View style={styles.emptyRule} />
+          <Text style={styles.emptyText}>Noch keine Matches vorhanden.</Text>
+        </View>
       ) : (
         <View style={styles.list}>
           {matches.map((stored) => {
@@ -117,16 +126,23 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
                   onPress={() => onOpenMatch(stored.id)}
                 >
                   <View style={styles.matchHeadline}>
-                    <PlayerTag player="A" name={stored.match.config.playerAName} />
-                    <Text style={complete ? styles.statusDone : styles.statusRunning}>
-                      {complete ? 'Beendet' : 'Läuft'}
-                    </Text>
+                    <Text style={styles.matchLabel}>Match</Text>
+                    <View style={styles.status}>
+                      {!complete ? <View style={styles.statusDot} /> : null}
+                      <Text style={complete ? styles.statusDone : styles.statusRunning}>
+                        {complete ? 'Beendet' : 'Läuft'}
+                      </Text>
+                    </View>
                   </View>
-                  <PlayerTag player="B" name={stored.match.config.playerBName} />
+                  <View style={styles.players}>
+                    <PlayerTag player="A" name={stored.match.config.playerAName} />
+                    <Text style={styles.versus}>vs</Text>
+                    <PlayerTag player="B" name={stored.match.config.playerBName} />
+                  </View>
                 </Pressable>
                 <Button
                   variant="quiet"
-                  label="Löschen"
+                  label="×"
                   accessibilityLabel={`${label} löschen`}
                   onPress={() => handleDelete(stored.id, label)}
                   style={styles.deleteButton}
@@ -144,6 +160,14 @@ const useStyles = makeStyles((theme) => ({
   screen: {
     gap: space.lg,
   },
+  header: {
+    gap: space.xs,
+    paddingTop: space.sm,
+  },
+  eyebrow: {
+    ...type.micro,
+    color: theme.color.accent,
+  },
   title: {
     ...type.display,
     color: theme.color.textPrimary,
@@ -158,31 +182,75 @@ const useStyles = makeStyles((theme) => ({
   emptyText: {
     ...type.body,
     color: theme.color.textSecondary,
+    textAlign: 'center',
+  },
+  emptyState: {
+    flex: 1,
+    minHeight: 260,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.lg,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderRadius: radius.lg,
+  },
+  emptyScore: {
+    ...type.display,
+    fontSize: 56,
+    lineHeight: 60,
+    color: theme.color.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  emptyRule: {
+    width: 48,
+    height: stroke.bar,
+    backgroundColor: theme.color.actionFill,
   },
   list: {
     gap: space.sm,
   },
   listItem: {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'center',
     gap: space.sm,
   },
   matchButton: {
     flex: 1,
     justifyContent: 'center',
-    gap: space.xs,
+    gap: space.md,
     backgroundColor: theme.color.surface,
     borderWidth: stroke.hairline,
-    borderColor: theme.color.borderStrong,
-    borderRadius: radius.md,
-    paddingVertical: space.md,
+    borderColor: theme.color.border,
+    borderRadius: radius.lg,
+    paddingVertical: space.lg,
     paddingHorizontal: space.lg,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.22 : 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   matchHeadline: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: space.sm,
+  },
+  matchLabel: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+  },
+  status: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: radius.chip,
+    backgroundColor: theme.color.accentMarker,
   },
   statusRunning: {
     ...type.micro,
@@ -192,10 +260,21 @@ const useStyles = makeStyles((theme) => ({
     ...type.micro,
     color: theme.color.textSecondary,
   },
+  players: {
+    gap: space.sm,
+  },
+  versus: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+    marginLeft: space.md,
+  },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.78,
+    transform: [{ scale: 0.99 }],
   },
   deleteButton: {
-    paddingHorizontal: space.md,
+    width: hit.comfortable,
+    height: hit.comfortable,
+    paddingHorizontal: 0,
   },
 }));

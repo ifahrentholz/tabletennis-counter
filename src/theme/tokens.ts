@@ -28,15 +28,15 @@ export const space = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 24,
-  xxl: 32,
+  xl: 20,
+  xxl: 28,
 } as const;
 
 export const radius = {
-  chip: 5,
-  sm: 8,
-  md: 14,
-  lg: 22,
+  chip: 3,
+  sm: 4,
+  md: 6,
+  lg: 8,
 } as const;
 
 export const hit = {
@@ -58,76 +58,88 @@ export const stroke = {
 export const type = {
   /** The live score. Read at ~1 m. */
   score: text({
-    fontSize: 92,
-    fontWeight: '800',
-    letterSpacing: -3,
+    fontSize: 104,
+    fontWeight: '900',
+    letterSpacing: 0,
     fontVariant: ['tabular-nums'],
   }),
   /** The "+1" on a rubber face. */
   face: text({
-    fontSize: 40,
-    fontWeight: '800',
-    letterSpacing: -1,
+    fontSize: 34,
+    fontWeight: '900',
+    letterSpacing: 0,
     fontVariant: ['tabular-nums'],
   }),
   /** An aggregated stand ("Spiele: 3"). */
   stand: text({
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontSize: 52,
+    fontWeight: '900',
+    lineHeight: 56,
+    letterSpacing: 0,
     fontVariant: ['tabular-nums'],
   }),
   /** Screen heading. */
   display: text({
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.8,
+    fontSize: 32,
+    lineHeight: 36,
+    fontWeight: '900',
+    letterSpacing: 0,
   }),
   /** Section or player heading. */
   title: text({
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
+    fontSize: 19,
+    lineHeight: 24,
+    fontWeight: '800',
+    letterSpacing: 0,
   }),
   body: text({
-    fontSize: 17,
+    fontSize: 16,
+    lineHeight: 22,
     fontWeight: '500',
+    letterSpacing: 0,
   }),
   bodyStrong: text({
     fontSize: 17,
-    fontWeight: '700',
+    lineHeight: 22,
+    fontWeight: '800',
+    letterSpacing: 0,
     fontVariant: ['tabular-nums'],
   }),
   /** Form label / list value. */
   label: text({
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '700',
+    letterSpacing: 0,
   }),
   /** Stamped label: all caps, widely tracked. */
   micro: text({
     fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.6,
+    lineHeight: 16,
+    fontWeight: '800',
+    letterSpacing: 0,
     textTransform: 'uppercase',
   }),
   /** Same stamped label, sized to be tapped. */
   microAction: text({
     fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
+    lineHeight: 18,
+    fontWeight: '800',
+    letterSpacing: 0,
   }),
   /** Primary action slab. */
   action: text({
-    fontSize: 17,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '900',
+    letterSpacing: 0,
   }),
   /** Undo, at the counter's reading distance. */
   undo: text({
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '900',
+    letterSpacing: 0,
     fontVariant: ['tabular-nums'],
   }),
 } as const;

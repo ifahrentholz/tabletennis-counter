@@ -46,12 +46,10 @@ export function PlayerStandRow({
   return (
     <View style={styles.container}>
       <PlayerTag player={player} name={name} />
-      <Text
-        style={[styles.value, player === 'A' ? styles.inkA : styles.inkB]}
-        accessibilityLabel={`${label} ${name}`}
-      >
-        {label}: {value}
-      </Text>
+      <View style={styles.valueBlock} accessible accessibilityLabel={`${label} ${name}`}>
+        <Text style={styles.valueLabel}>{label}: </Text>
+        <Text style={[styles.value, player === 'A' ? styles.inkA : styles.inkB]}>{value}</Text>
+      </View>
 
       {editing ? (
         <View style={styles.stepper}>
@@ -79,11 +77,33 @@ export function PlayerStandRow({
 
 const useStyles = makeStyles((theme) => ({
   container: {
+    flex: 1,
     alignItems: 'center',
-    gap: space.xs,
+    justifyContent: 'center',
+    gap: space.sm,
+    minWidth: 0,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderRadius: radius.lg,
+    paddingVertical: space.md,
+    paddingHorizontal: space.sm,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.22 : 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   value: {
     ...type.stand,
+    textAlign: 'center',
+  },
+  valueBlock: {
+    alignItems: 'center',
+  },
+  valueLabel: {
+    ...type.micro,
+    color: theme.color.textSecondary,
   },
   inkA: {
     color: theme.player.A.ink,
@@ -94,19 +114,20 @@ const useStyles = makeStyles((theme) => ({
   stepper: {
     flexDirection: 'row',
     gap: space.sm,
-    marginTop: space.xs,
   },
   stepperButton: {
     minWidth: hit.min,
     minHeight: hit.min,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     borderWidth: stroke.hairline,
-    borderColor: theme.color.borderStrong,
+    borderColor: theme.color.border,
+    backgroundColor: theme.color.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.72,
+    transform: [{ scale: 0.96 }],
   },
   stepperButtonText: {
     ...type.undo,

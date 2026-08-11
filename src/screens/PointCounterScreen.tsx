@@ -44,7 +44,7 @@ import { addPoint, isMatchComplete, undoPoint } from '../domain/match';
 import type { Match, Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
-import { makeStyles, space, stroke, type } from '../theme';
+import { makeStyles, radius, space, stroke, type } from '../theme';
 
 export interface PointCounterScreenProps {
   matchId: string;
@@ -105,12 +105,14 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
     <Screen testID="point-counter-safe-area" style={styles.screen}>
       <View style={styles.topRow}>
         <Button variant="quiet" label="Zurück" onPress={onBack} />
-        {/* Ball orange means "this is where you are right now" and nothing
-            else — so the position marker loses its colour the moment the
-            match is over. */}
-        <Text style={[styles.position, matchComplete ? styles.positionDone : styles.positionLive]}>
-          Satz {currentGame.sets.length} · Spiel {match.games.length}
-        </Text>
+        <View style={styles.positionWrap}>
+          {!matchComplete ? <View style={styles.liveDot} /> : null}
+          <Text
+            style={[styles.position, matchComplete ? styles.positionDone : styles.positionLive]}
+          >
+            Satz {currentGame.sets.length} · Spiel {match.games.length}
+          </Text>
+        </View>
       </View>
 
       {match.winner && winnerName ? (
@@ -128,9 +130,6 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
           onPoint={() => applyAndPersist((m) => addPoint(m, 'A'))}
           onUndo={() => applyAndPersist(undoPoint)}
         />
-        {/* The table's centre line: it is what divides one player's half
-            from the other's on a real table, so it divides them here too. */}
-        <View style={styles.centreLine} />
         <PlayerColumn
           player="B"
           name={match.config.playerBName}
@@ -170,16 +169,21 @@ function PlayerColumn({
   const styles = useStyles();
 
   return (
-    <View style={styles.playerColumn}>
+    <View
+      style={[styles.playerColumn, player === 'A' ? styles.playerColumnA : styles.playerColumnB]}
+    >
       <View style={styles.readBlock}>
-        <PlayerTag player={player} name={name} size="title" chip={false} />
+        <PlayerTag player={player} name={name} size="title" />
         <ScoreNumeral player={player} name={name} points={points} />
-        <Text style={styles.subScore} accessibilityLabel={`Sätze ${name}`}>
-          Sätze: {setsWon}
-        </Text>
-        <Text style={styles.subScore} accessibilityLabel={`Spiele ${name}`}>
-          Spiele: {gamesWon}
-        </Text>
+        <View style={styles.subScores}>
+          <Text style={styles.subScore} accessibilityLabel={`Sätze ${name}`}>
+            Sätze: {setsWon}
+          </Text>
+          <View style={styles.subScoreRule} />
+          <Text style={styles.subScore} accessibilityLabel={`Spiele ${name}`}>
+            Spiele: {gamesWon}
+          </Text>
+        </View>
       </View>
 
       <RubberFace
@@ -205,6 +209,7 @@ function PlayerColumn({
 const useStyles = makeStyles((theme) => ({
   screen: {
     gap: space.md,
+    paddingHorizontal: space.md,
   },
   loading: {
     ...type.body,
@@ -215,6 +220,23 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: space.md,
+  },
+  positionWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    minHeight: 36,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderRadius: radius.md,
+    paddingHorizontal: space.md,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: radius.chip,
+    backgroundColor: theme.color.accentMarker,
   },
   position: {
     ...type.micro,
@@ -232,22 +254,48 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'stretch',
-    gap: space.md,
-  },
-  centreLine: {
-    width: stroke.line,
-    alignSelf: 'stretch',
-    backgroundColor: theme.color.centreLine,
+    gap: space.sm,
   },
   playerColumn: {
     flex: 1,
     gap: space.sm,
+    minWidth: 0,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderTopWidth: stroke.bar,
+    borderRadius: radius.lg,
+    padding: space.sm,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.24 : 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  playerColumnA: {
+    borderTopColor: theme.player.A.ink,
+  },
+  playerColumnB: {
+    borderTopColor: theme.player.B.ink,
   },
   readBlock: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: space.xs,
+    gap: space.sm,
+    minWidth: 0,
+  },
+  subScores: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    width: '100%',
+  },
+  subScoreRule: {
+    width: stroke.hairline,
+    height: 14,
+    backgroundColor: theme.color.borderStrong,
   },
   subScore: {
     ...type.micro,

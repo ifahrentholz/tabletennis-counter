@@ -59,11 +59,16 @@ export function RubberFace({
 
 const useStyles = makeStyles((theme) => ({
   face: {
-    minHeight: hit.slab,
+    minHeight: hit.slab - space.md,
     borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: space.sm,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.3 : 0.18,
+    shadowRadius: 8,
+    elevation: 4,
   },
   faceA: {
     backgroundColor: theme.player.A.faceFill,
@@ -76,7 +81,8 @@ const useStyles = makeStyles((theme) => ({
     borderWidth: theme.player.B.faceBorderWidth,
   },
   pressed: {
-    opacity: 0.75,
+    opacity: 0.82,
+    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.45,

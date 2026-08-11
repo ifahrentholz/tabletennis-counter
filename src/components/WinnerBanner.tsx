@@ -62,15 +62,15 @@ const useStyles = makeStyles((theme) => ({
     gap: space.md,
     backgroundColor: theme.color.surface,
     borderRadius: radius.md,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
     paddingVertical: space.md,
     paddingRight: space.lg,
     overflow: 'hidden',
   },
   bar: {
     alignSelf: 'stretch',
-    width: stroke.bar,
-    borderTopRightRadius: radius.chip,
-    borderBottomRightRadius: radius.chip,
+    width: stroke.bar + 2,
   },
   barA: {
     backgroundColor: theme.player.A.ink,

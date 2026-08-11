@@ -36,7 +36,7 @@ import { adjustGameSetsWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
-import { hit, makeStyles, radius, space, stroke, type } from '../theme';
+import { makeStyles, radius, space, stroke, type } from '../theme';
 import { PlayerStandRow } from './PlayerStandRow';
 
 export interface SetsOverviewScreenProps {
@@ -91,7 +91,10 @@ export function SetsOverviewScreen({
 
   return (
     <Screen testID="sets-overview-safe-area" style={styles.screen}>
-      <Button variant="quiet" label="Zurück" onPress={onBack} style={styles.backButton} />
+      <View style={styles.headerRow}>
+        <Button variant="quiet" label="Zurück" onPress={onBack} style={styles.backButton} />
+        <Text style={styles.eyebrow}>Sätze</Text>
+      </View>
 
       <Text style={styles.title}>Spiel {gameIndex + 1}</Text>
 
@@ -125,33 +128,48 @@ export function SetsOverviewScreen({
         />
       ) : null}
 
-      <View style={styles.list}>
-        {game.sets.map((set, index) => {
-          const isLive =
-            !matchComplete && isCurrentGame && !set.winner && index === game.sets.length - 1;
-          return (
-            <Pressable
-              key={index}
-              style={({ pressed }) => [
-                styles.listItem,
-                isLive && styles.listItemLive,
-                pressed && styles.pressed,
-              ]}
-              accessibilityRole="button"
-              onPress={() => onOpenPointCounter(matchId)}
-            >
-              <Text style={styles.listItemText}>
-                <Text style={styles.listItemLabel}>Satz {index + 1}</Text>
-                <Text style={styles.listItemScore}>{`: ${set.points.A}:${set.points.B}`}</Text>
-                {set.winner ? (
-                  <Text style={styles.listItemNote}>
-                    {` – ${set.winner === 'A' ? match.config.playerAName : match.config.playerBName} gewinnt`}
-                  </Text>
-                ) : null}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View style={styles.listSection}>
+        <View style={styles.listHeader}>
+          <Text style={styles.listHeaderText}>Satzverlauf</Text>
+          <Text style={styles.listHeaderText}>Punkte</Text>
+        </View>
+        <View style={styles.list}>
+          {game.sets.map((set, index) => {
+            const isLive =
+              !matchComplete && isCurrentGame && !set.winner && index === game.sets.length - 1;
+            return (
+              <Pressable
+                key={index}
+                style={({ pressed }) => [
+                  styles.listItem,
+                  isLive && styles.listItemLive,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                onPress={() => onOpenPointCounter(matchId)}
+              >
+                <View style={styles.listItemCopy}>
+                  <View style={styles.listItemHeading}>
+                    <Text style={styles.listItemLabel}>Satz {index + 1}</Text>
+                    {isLive ? <Text style={styles.liveLabel}>Live</Text> : null}
+                  </View>
+                  {set.winner ? (
+                    <Text style={styles.listItemNote}>
+                      {set.winner === 'A' ? match.config.playerAName : match.config.playerBName}{' '}
+                      gewinnt
+                    </Text>
+                  ) : null}
+                </View>
+                <Text style={styles.listItemScore}>
+                  {set.points.A}:{set.points.B}
+                </Text>
+                <Text style={styles.chevron} accessibilityElementsHidden>
+                  ›
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </Screen>
   );
@@ -159,14 +177,24 @@ export function SetsOverviewScreen({
 
 const useStyles = makeStyles((theme) => ({
   screen: {
-    gap: space.lg,
+    gap: space.md,
   },
   loading: {
     ...type.body,
     color: theme.color.textSecondary,
   },
   backButton: {
-    alignSelf: 'flex-start',
+    minWidth: 86,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.md,
+  },
+  eyebrow: {
+    ...type.micro,
+    color: theme.color.accent,
   },
   title: {
     ...type.display,
@@ -175,23 +203,38 @@ const useStyles = makeStyles((theme) => ({
   },
   standRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    gap: space.md,
+    gap: space.sm,
   },
   editButton: {
-    alignSelf: 'center',
+    alignSelf: 'flex-end',
+  },
+  listSection: {
+    gap: space.sm,
+    flex: 1,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: space.sm,
+  },
+  listHeaderText: {
+    ...type.micro,
+    color: theme.color.textSecondary,
   },
   list: {
     gap: space.sm,
   },
   listItem: {
-    minHeight: hit.min,
-    justifyContent: 'center',
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
     backgroundColor: theme.color.surface,
     borderWidth: stroke.hairline,
-    borderColor: theme.color.borderStrong,
-    borderRadius: radius.md,
-    paddingVertical: space.md,
+    borderColor: theme.color.border,
+    borderRadius: radius.lg,
+    paddingVertical: space.sm,
     paddingHorizontal: space.lg,
   },
   listItemLive: {
@@ -200,22 +243,39 @@ const useStyles = makeStyles((theme) => ({
     paddingLeft: space.lg - (stroke.bar - stroke.hairline),
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.76,
+    transform: [{ scale: 0.99 }],
   },
-  listItemText: {
-    ...type.body,
-    color: theme.color.textPrimary,
+  listItemCopy: {
+    flex: 1,
+    gap: space.xs,
+    minWidth: 0,
+  },
+  listItemHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
   },
   listItemLabel: {
+    ...type.bodyStrong,
+    color: theme.color.textPrimary,
+  },
+  liveLabel: {
     ...type.micro,
-    color: theme.color.textSecondary,
+    color: theme.color.accent,
   },
   listItemScore: {
-    ...type.bodyStrong,
+    ...type.stand,
+    fontSize: 30,
+    lineHeight: 34,
     color: theme.color.textPrimary,
   },
   listItemNote: {
     ...type.label,
+    color: theme.color.textSecondary,
+  },
+  chevron: {
+    ...type.title,
     color: theme.color.textSecondary,
   },
 }));

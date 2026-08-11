@@ -61,10 +61,10 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 1,
   },
   chip: {
-    width: 14,
-    height: 14,
+    width: 5,
+    height: 20,
     borderRadius: radius.chip,
-    borderWidth: stroke.line,
+    borderWidth: stroke.hairline,
   },
   chipA: {
     backgroundColor: theme.player.A.chipFill,
@@ -75,7 +75,7 @@ const useStyles = makeStyles((theme) => ({
     borderColor: theme.player.B.chipBorder,
   },
   nameMicro: {
-    ...type.micro,
+    ...type.label,
     flexShrink: 1,
   },
   nameTitle: {

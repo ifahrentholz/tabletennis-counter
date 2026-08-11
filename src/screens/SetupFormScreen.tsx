@@ -96,51 +96,60 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
 
   return (
     <Screen testID="setup-form-safe-area" style={styles.screen}>
-      <PresetGroup
-        groupLabel="Punkte pro Satz"
-        options={POINTS_TO_WIN_OPTIONS}
-        value={pointsToWin}
-        onChange={setPointsToWin}
-      />
-      <PresetGroup
-        groupLabel="Sätze pro Spiel"
-        options={SETS_TO_WIN_GAME_OPTIONS}
-        value={setsToWinGame}
-        onChange={setSetsToWinGame}
-      />
-      <PresetGroup
-        groupLabel="Spiele pro Match"
-        options={GAMES_TO_WIN_MATCH_OPTIONS}
-        value={gamesToWinMatch}
-        onChange={setGamesToWinMatch}
-      />
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>Match Setup</Text>
+        <Text style={styles.title}>Neues Match</Text>
+      </View>
 
-      <View style={styles.field}>
-        <PlayerTag player="A" name="Spieler A" />
-        <TextInput
-          style={styles.input}
-          placeholder="Name Spieler A"
-          placeholderTextColor={theme.color.textSecondary}
-          accessibilityLabel="Name Spieler A"
-          value={playerAName}
-          onChangeText={setPlayerAName}
-          autoComplete="off"
-          autoCorrect={false}
+      <View style={styles.section}>
+        <PresetGroup
+          groupLabel="Punkte pro Satz"
+          options={POINTS_TO_WIN_OPTIONS}
+          value={pointsToWin}
+          onChange={setPointsToWin}
+        />
+        <PresetGroup
+          groupLabel="Sätze pro Spiel"
+          options={SETS_TO_WIN_GAME_OPTIONS}
+          value={setsToWinGame}
+          onChange={setSetsToWinGame}
+        />
+        <PresetGroup
+          groupLabel="Spiele pro Match"
+          options={GAMES_TO_WIN_MATCH_OPTIONS}
+          value={gamesToWinMatch}
+          onChange={setGamesToWinMatch}
         />
       </View>
 
-      <View style={styles.field}>
-        <PlayerTag player="B" name="Spieler B" />
-        <TextInput
-          style={styles.input}
-          placeholder="Name Spieler B"
-          placeholderTextColor={theme.color.textSecondary}
-          accessibilityLabel="Name Spieler B"
-          value={playerBName}
-          onChangeText={setPlayerBName}
-          autoComplete="off"
-          autoCorrect={false}
-        />
+      <View style={styles.section}>
+        <View style={styles.field}>
+          <PlayerTag player="A" name="Spieler A" />
+          <TextInput
+            style={styles.input}
+            placeholder="Name Spieler A"
+            placeholderTextColor={theme.color.textSecondary}
+            accessibilityLabel="Name Spieler A"
+            value={playerAName}
+            onChangeText={setPlayerAName}
+            autoComplete="off"
+            autoCorrect={false}
+          />
+        </View>
+
+        <View style={styles.field}>
+          <PlayerTag player="B" name="Spieler B" />
+          <TextInput
+            style={styles.input}
+            placeholder="Name Spieler B"
+            placeholderTextColor={theme.color.textSecondary}
+            accessibilityLabel="Name Spieler B"
+            value={playerBName}
+            onChangeText={setPlayerBName}
+            autoComplete="off"
+            autoCorrect={false}
+          />
+        </View>
       </View>
 
       <Button
@@ -212,8 +221,28 @@ const useStyles = makeStyles((theme) => ({
   screen: {
     gap: space.md,
   },
+  header: {
+    gap: space.xs,
+    paddingTop: space.xs,
+  },
+  eyebrow: {
+    ...type.micro,
+    color: theme.color.accent,
+  },
+  title: {
+    ...type.display,
+    color: theme.color.textPrimary,
+  },
+  section: {
+    gap: space.md,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderRadius: radius.lg,
+    padding: space.md,
+  },
   presetGroup: {
-    gap: space.sm,
+    gap: space.xs,
   },
   label: {
     ...type.micro,
@@ -224,14 +253,15 @@ const useStyles = makeStyles((theme) => ({
     gap: space.sm,
   },
   presetOption: {
-    minWidth: hit.comfortable,
+    flex: 1,
+    minWidth: 0,
     minHeight: hit.min,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: space.lg,
-    borderRadius: radius.sm,
+    paddingHorizontal: space.sm,
+    borderRadius: radius.md,
     borderWidth: stroke.hairline,
-    borderColor: theme.color.borderStrong,
+    borderColor: theme.color.border,
     backgroundColor: theme.color.surfaceMuted,
   },
   presetOptionSelected: {
@@ -239,7 +269,8 @@ const useStyles = makeStyles((theme) => ({
     borderColor: theme.color.actionFill,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.76,
+    transform: [{ scale: 0.98 }],
   },
   presetOptionText: {
     ...type.bodyStrong,
@@ -257,14 +288,13 @@ const useStyles = makeStyles((theme) => ({
     color: theme.color.textPrimary,
     backgroundColor: theme.color.surface,
     borderWidth: stroke.hairline,
-    borderColor: theme.color.borderStrong,
-    borderRadius: radius.sm,
+    borderColor: theme.color.border,
+    borderRadius: radius.md,
     paddingVertical: space.sm,
     paddingHorizontal: space.md,
   },
   startButton: {
     alignSelf: 'stretch',
-    marginTop: space.sm,
   },
   // Errors are not red: red is player identity now, and orange means "you
   // are here". A failed save is called out by weight and a hard rule

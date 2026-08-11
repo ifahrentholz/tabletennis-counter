@@ -37,6 +37,7 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
     backgroundColor: theme.color.bg,
     paddingHorizontal: space.xl,
-    paddingVertical: space.lg,
+    paddingTop: space.md,
+    paddingBottom: space.lg,
   },
 }));
