@@ -20,7 +20,6 @@
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import { PlayerTag } from '../components/PlayerTag';
 import { Screen } from '../components/Screen';
 import { ScreenActionBar } from '../components/ScreenActionBar';
 import { createMatch } from '../domain/match';
@@ -97,12 +96,9 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
   return (
     <Screen testID="setup-form-safe-area" style={styles.screen}>
       <View style={styles.header}>
-        <View style={styles.headerRule} />
-        <View style={styles.headerCopy}>
-          <Text style={styles.eyebrow}>Match Setup</Text>
-          <Text style={styles.title}>Neues Match</Text>
-          <Text style={styles.subtitle}>Format wählen. Lineup setzen. Losspielen.</Text>
-        </View>
+        <Text style={styles.eyebrow}>Match Setup</Text>
+        <Text style={styles.title}>Neues Match</Text>
+        <Text style={styles.subtitle}>Spielformat festlegen und Namen eintragen.</Text>
       </View>
 
       <ScrollView
@@ -113,8 +109,8 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
       >
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionIndex}>01</Text>
             <Text style={styles.sectionTitle}>Spielformat</Text>
+            <Text style={styles.sectionMeta}>01</Text>
           </View>
           <PresetGroup
             groupLabel="Punkte pro Satz"
@@ -138,13 +134,16 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionIndex}>02</Text>
             <Text style={styles.sectionTitle}>Lineup</Text>
+            <Text style={styles.sectionMeta}>02</Text>
           </View>
           <View style={styles.field}>
-            <PlayerTag player="A" name="Spieler A" />
+            <View style={styles.fieldHeader}>
+              <View style={[styles.playerMark, styles.playerMarkA]} />
+              <Text style={[styles.fieldLabel, styles.fieldLabelA]}>Spieler A</Text>
+            </View>
             <TextInput
-              style={[styles.input, styles.inputA]}
+              style={styles.input}
               placeholder="Name Spieler A"
               placeholderTextColor={theme.color.textSecondary}
               accessibilityLabel="Name Spieler A"
@@ -156,9 +155,12 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
           </View>
 
           <View style={styles.field}>
-            <PlayerTag player="B" name="Spieler B" />
+            <View style={styles.fieldHeader}>
+              <View style={[styles.playerMark, styles.playerMarkB]} />
+              <Text style={[styles.fieldLabel, styles.fieldLabelB]}>Spieler B</Text>
+            </View>
             <TextInput
-              style={[styles.input, styles.inputB]}
+              style={styles.input}
               placeholder="Name Spieler B"
               placeholderTextColor={theme.color.textSecondary}
               accessibilityLabel="Name Spieler B"
@@ -228,6 +230,7 @@ function PresetGroup<T extends number>({
               <Text style={[styles.presetOptionText, selected && styles.presetOptionTextSelected]}>
                 {option}
               </Text>
+              {selected ? <View style={styles.presetMarker} /> : null}
             </Pressable>
           );
         })}
@@ -238,27 +241,13 @@ function PresetGroup<T extends number>({
 
 const useStyles = makeStyles((theme) => ({
   screen: {
-    gap: space.lg,
+    gap: space.md,
   },
   header: {
-    minHeight: 118,
-    flexDirection: 'row',
-    gap: space.lg,
-    alignItems: 'stretch',
-    backgroundColor: theme.color.surfaceStrong,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-  },
-  headerRule: {
-    width: 4,
-    backgroundColor: theme.color.actionFill,
-  },
-  headerCopy: {
-    flex: 1,
-    justifyContent: 'center',
     gap: space.xs,
-    paddingVertical: space.lg,
-    paddingRight: space.lg,
+    borderBottomWidth: stroke.hairline,
+    borderBottomColor: theme.color.border,
+    paddingBottom: space.lg,
   },
   eyebrow: {
     ...type.micro,
@@ -266,18 +255,17 @@ const useStyles = makeStyles((theme) => ({
   },
   title: {
     ...type.display,
-    color: theme.color.textOnStrong,
+    color: theme.color.textPrimary,
   },
   subtitle: {
     ...type.label,
-    color: theme.color.textOnStrong,
-    opacity: 0.68,
+    color: theme.color.textSecondary,
   },
   formScroll: {
     flex: 1,
   },
   form: {
-    gap: space.md,
+    gap: space.lg,
     paddingBottom: space.lg,
   },
   section: {
@@ -285,29 +273,33 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.color.surface,
     borderWidth: stroke.hairline,
     borderColor: theme.color.border,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     padding: space.lg,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.12 : 0.04,
+    shadowRadius: 5,
+    elevation: 1,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.sm,
-    marginBottom: space.xs,
+    justifyContent: 'space-between',
+    minHeight: 36,
+    borderBottomWidth: stroke.hairline,
+    borderBottomColor: theme.color.border,
+    paddingBottom: space.sm,
   },
-  sectionIndex: {
+  sectionMeta: {
     ...type.micro,
     color: theme.color.textSecondary,
-    backgroundColor: theme.color.surfaceMuted,
-    borderRadius: radius.chip,
-    paddingVertical: 3,
-    paddingHorizontal: space.sm,
   },
   sectionTitle: {
     ...type.title,
     color: theme.color.textPrimary,
   },
   presetGroup: {
-    gap: space.xs,
+    gap: space.sm,
   },
   label: {
     ...type.micro,
@@ -315,7 +307,12 @@ const useStyles = makeStyles((theme) => ({
   },
   presetRow: {
     flexDirection: 'row',
-    gap: space.sm,
+    gap: 3,
+    padding: 3,
+    backgroundColor: theme.color.surfaceMuted,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderRadius: radius.md,
   },
   presetOption: {
     flex: 1,
@@ -326,12 +323,18 @@ const useStyles = makeStyles((theme) => ({
     paddingHorizontal: space.sm,
     borderRadius: radius.sm,
     borderWidth: stroke.hairline,
-    borderColor: theme.color.border,
-    backgroundColor: theme.color.surfaceMuted,
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
   presetOptionSelected: {
-    backgroundColor: theme.color.actionFill,
-    borderColor: theme.color.actionFill,
+    backgroundColor: theme.color.surface,
+    borderColor: theme.color.border,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.18 : 0.06,
+    shadowRadius: 2,
+    elevation: 1,
   },
   pressed: {
     opacity: 0.76,
@@ -342,28 +345,54 @@ const useStyles = makeStyles((theme) => ({
     color: theme.color.textPrimary,
   },
   presetOptionTextSelected: {
-    color: theme.color.actionInk,
+    color: theme.color.actionFill,
+  },
+  presetMarker: {
+    position: 'absolute',
+    bottom: 3,
+    width: 16,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: theme.color.actionFill,
   },
   field: {
     gap: space.sm,
+  },
+  fieldHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  playerMark: {
+    width: 4,
+    height: 22,
+    borderRadius: 2,
+  },
+  playerMarkA: {
+    backgroundColor: theme.player.A.faceFill,
+  },
+  playerMarkB: {
+    backgroundColor: theme.player.B.faceFill,
+  },
+  fieldLabel: {
+    ...type.label,
+  },
+  fieldLabelA: {
+    color: theme.player.A.ink,
+  },
+  fieldLabelB: {
+    color: theme.player.B.ink,
   },
   input: {
     ...type.body,
     minHeight: hit.comfortable,
     color: theme.color.textPrimary,
-    backgroundColor: theme.color.surface,
+    backgroundColor: theme.color.surfaceMuted,
     borderWidth: stroke.hairline,
     borderColor: theme.color.border,
     borderRadius: radius.md,
-    borderLeftWidth: 3,
     paddingVertical: space.sm,
     paddingHorizontal: space.md,
-  },
-  inputA: {
-    borderLeftColor: theme.player.A.faceFill,
-  },
-  inputB: {
-    borderLeftColor: theme.player.B.faceFill,
   },
   // Errors are not red: red is player identity now, and orange means "you
   // are here". A failed save is called out by weight and a hard rule
