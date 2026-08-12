@@ -77,29 +77,25 @@ export function PlayerStandRow({
 
 const useStyles = makeStyles((theme) => ({
   container: {
-    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     gap: space.sm,
     minWidth: 0,
-    backgroundColor: theme.color.surface,
-    borderWidth: stroke.hairline,
-    borderColor: theme.color.border,
-    borderRadius: radius.lg,
-    paddingVertical: space.md,
-    paddingHorizontal: space.sm,
-    shadowColor: theme.color.shadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: theme.scheme === 'dark' ? 0.22 : 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    minHeight: 54,
+    paddingVertical: space.xs,
   },
   value: {
-    ...type.stand,
+    ...type.title,
+    fontSize: 26,
+    lineHeight: 30,
     textAlign: 'center',
   },
   valueBlock: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: space.sm,
+    marginLeft: 'auto',
   },
   valueLabel: {
     ...type.micro,
@@ -113,7 +109,8 @@ const useStyles = makeStyles((theme) => ({
   },
   stepper: {
     flexDirection: 'row',
-    gap: space.sm,
+    gap: space.xs,
+    marginLeft: space.sm,
   },
   stepperButton: {
     minWidth: hit.min,

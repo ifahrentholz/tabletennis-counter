@@ -18,11 +18,11 @@
  */
 
 import { useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-import { Button } from '../components/Button';
 import { PlayerTag } from '../components/PlayerTag';
 import { Screen } from '../components/Screen';
+import { ScreenActionBar } from '../components/ScreenActionBar';
 import { createMatch } from '../domain/match';
 import type { MatchConfig } from '../domain/match';
 import { saveMatch } from '../persistence/matchStore';
@@ -97,76 +97,95 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
   return (
     <Screen testID="setup-form-safe-area" style={styles.screen}>
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>Match Setup</Text>
-        <Text style={styles.title}>Neues Match</Text>
-      </View>
-
-      <View style={styles.section}>
-        <PresetGroup
-          groupLabel="Punkte pro Satz"
-          options={POINTS_TO_WIN_OPTIONS}
-          value={pointsToWin}
-          onChange={setPointsToWin}
-        />
-        <PresetGroup
-          groupLabel="Sätze pro Spiel"
-          options={SETS_TO_WIN_GAME_OPTIONS}
-          value={setsToWinGame}
-          onChange={setSetsToWinGame}
-        />
-        <PresetGroup
-          groupLabel="Spiele pro Match"
-          options={GAMES_TO_WIN_MATCH_OPTIONS}
-          value={gamesToWinMatch}
-          onChange={setGamesToWinMatch}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.field}>
-          <PlayerTag player="A" name="Spieler A" />
-          <TextInput
-            style={styles.input}
-            placeholder="Name Spieler A"
-            placeholderTextColor={theme.color.textSecondary}
-            accessibilityLabel="Name Spieler A"
-            value={playerAName}
-            onChangeText={setPlayerAName}
-            autoComplete="off"
-            autoCorrect={false}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <PlayerTag player="B" name="Spieler B" />
-          <TextInput
-            style={styles.input}
-            placeholder="Name Spieler B"
-            placeholderTextColor={theme.color.textSecondary}
-            accessibilityLabel="Name Spieler B"
-            value={playerBName}
-            onChangeText={setPlayerBName}
-            autoComplete="off"
-            autoCorrect={false}
-          />
+        <View style={styles.headerRule} />
+        <View style={styles.headerCopy}>
+          <Text style={styles.eyebrow}>Match Setup</Text>
+          <Text style={styles.title}>Neues Match</Text>
+          <Text style={styles.subtitle}>Format wählen. Lineup setzen. Losspielen.</Text>
         </View>
       </View>
 
-      <Button
+      <ScrollView
+        style={styles.formScroll}
+        contentContainerStyle={styles.form}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIndex}>01</Text>
+            <Text style={styles.sectionTitle}>Spielformat</Text>
+          </View>
+          <PresetGroup
+            groupLabel="Punkte pro Satz"
+            options={POINTS_TO_WIN_OPTIONS}
+            value={pointsToWin}
+            onChange={setPointsToWin}
+          />
+          <PresetGroup
+            groupLabel="Sätze pro Spiel"
+            options={SETS_TO_WIN_GAME_OPTIONS}
+            value={setsToWinGame}
+            onChange={setSetsToWinGame}
+          />
+          <PresetGroup
+            groupLabel="Spiele pro Match"
+            options={GAMES_TO_WIN_MATCH_OPTIONS}
+            value={gamesToWinMatch}
+            onChange={setGamesToWinMatch}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIndex}>02</Text>
+            <Text style={styles.sectionTitle}>Lineup</Text>
+          </View>
+          <View style={styles.field}>
+            <PlayerTag player="A" name="Spieler A" />
+            <TextInput
+              style={[styles.input, styles.inputA]}
+              placeholder="Name Spieler A"
+              placeholderTextColor={theme.color.textSecondary}
+              accessibilityLabel="Name Spieler A"
+              value={playerAName}
+              onChangeText={setPlayerAName}
+              autoComplete="off"
+              autoCorrect={false}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <PlayerTag player="B" name="Spieler B" />
+            <TextInput
+              style={[styles.input, styles.inputB]}
+              placeholder="Name Spieler B"
+              placeholderTextColor={theme.color.textSecondary}
+              accessibilityLabel="Name Spieler B"
+              value={playerBName}
+              onChangeText={setPlayerBName}
+              autoComplete="off"
+              autoCorrect={false}
+            />
+          </View>
+        </View>
+
+        {saveError !== null && (
+          <View style={styles.notice}>
+            <View style={styles.noticeBar} />
+            <Text style={styles.noticeText} accessibilityRole="alert">
+              {saveError}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <ScreenActionBar
         label="Match starten"
+        kind="primary"
         onPress={handleStartMatch}
         disabled={isSubmitting}
-        style={styles.startButton}
       />
-
-      {saveError !== null && (
-        <View style={styles.notice}>
-          <View style={styles.noticeBar} />
-          <Text style={styles.noticeText} accessibilityRole="alert">
-            {saveError}
-          </Text>
-        </View>
-      )}
     </Screen>
   );
 }
@@ -219,11 +238,27 @@ function PresetGroup<T extends number>({
 
 const useStyles = makeStyles((theme) => ({
   screen: {
-    gap: space.md,
+    gap: space.lg,
   },
   header: {
+    minHeight: 118,
+    flexDirection: 'row',
+    gap: space.lg,
+    alignItems: 'stretch',
+    backgroundColor: theme.color.surfaceStrong,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  headerRule: {
+    width: 4,
+    backgroundColor: theme.color.actionFill,
+  },
+  headerCopy: {
+    flex: 1,
+    justifyContent: 'center',
     gap: space.xs,
-    paddingTop: space.xs,
+    paddingVertical: space.lg,
+    paddingRight: space.lg,
   },
   eyebrow: {
     ...type.micro,
@@ -231,7 +266,19 @@ const useStyles = makeStyles((theme) => ({
   },
   title: {
     ...type.display,
-    color: theme.color.textPrimary,
+    color: theme.color.textOnStrong,
+  },
+  subtitle: {
+    ...type.label,
+    color: theme.color.textOnStrong,
+    opacity: 0.68,
+  },
+  formScroll: {
+    flex: 1,
+  },
+  form: {
+    gap: space.md,
+    paddingBottom: space.lg,
   },
   section: {
     gap: space.md,
@@ -239,7 +286,25 @@ const useStyles = makeStyles((theme) => ({
     borderWidth: stroke.hairline,
     borderColor: theme.color.border,
     borderRadius: radius.lg,
-    padding: space.md,
+    padding: space.lg,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    marginBottom: space.xs,
+  },
+  sectionIndex: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+    backgroundColor: theme.color.surfaceMuted,
+    borderRadius: radius.chip,
+    paddingVertical: 3,
+    paddingHorizontal: space.sm,
+  },
+  sectionTitle: {
+    ...type.title,
+    color: theme.color.textPrimary,
   },
   presetGroup: {
     gap: space.xs,
@@ -259,7 +324,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: space.sm,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     borderWidth: stroke.hairline,
     borderColor: theme.color.border,
     backgroundColor: theme.color.surfaceMuted,
@@ -290,11 +355,15 @@ const useStyles = makeStyles((theme) => ({
     borderWidth: stroke.hairline,
     borderColor: theme.color.border,
     borderRadius: radius.md,
+    borderLeftWidth: 3,
     paddingVertical: space.sm,
     paddingHorizontal: space.md,
   },
-  startButton: {
-    alignSelf: 'stretch',
+  inputA: {
+    borderLeftColor: theme.player.A.faceFill,
+  },
+  inputB: {
+    borderLeftColor: theme.player.B.faceFill,
   },
   // Errors are not red: red is player identity now, and orange means "you
   // are here". A failed save is called out by weight and a hard rule

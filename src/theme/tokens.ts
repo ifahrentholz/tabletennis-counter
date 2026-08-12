@@ -28,15 +28,15 @@ export const space = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
-  xxl: 28,
+  xl: 24,
+  xxl: 32,
 } as const;
 
 export const radius = {
-  chip: 3,
-  sm: 4,
-  md: 6,
-  lg: 8,
+  chip: 6,
+  sm: 8,
+  md: 11,
+  lg: 16,
 } as const;
 
 export const hit = {
@@ -58,9 +58,9 @@ export const stroke = {
 export const type = {
   /** The live score. Read at ~1 m. */
   score: text({
-    fontSize: 104,
+    fontSize: 112,
     fontWeight: '900',
-    letterSpacing: 0,
+    letterSpacing: -5,
     fontVariant: ['tabular-nums'],
   }),
   /** The "+1" on a rubber face. */
@@ -81,16 +81,16 @@ export const type = {
   /** Screen heading. */
   display: text({
     fontSize: 32,
-    lineHeight: 36,
-    fontWeight: '900',
-    letterSpacing: 0,
+    lineHeight: 38,
+    fontWeight: '800',
+    letterSpacing: -0.8,
   }),
   /** Section or player heading. */
   title: text({
-    fontSize: 19,
-    lineHeight: 24,
-    fontWeight: '800',
-    letterSpacing: 0,
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: '700',
+    letterSpacing: -0.25,
   }),
   body: text({
     fontSize: 16,
@@ -114,10 +114,10 @@ export const type = {
   }),
   /** Stamped label: all caps, widely tracked. */
   micro: text({
-    fontSize: 12,
+    fontSize: 11,
     lineHeight: 16,
-    fontWeight: '800',
-    letterSpacing: 0,
+    fontWeight: '700',
+    letterSpacing: 0.9,
     textTransform: 'uppercase',
   }),
   /** Same stamped label, sized to be tapped. */
@@ -132,7 +132,7 @@ export const type = {
     fontSize: 16,
     lineHeight: 20,
     fontWeight: '900',
-    letterSpacing: 0,
+    letterSpacing: 0.2,
   }),
   /** Undo, at the counter's reading distance. */
   undo: text({

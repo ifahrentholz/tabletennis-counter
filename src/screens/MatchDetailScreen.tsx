@@ -27,10 +27,11 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
+import { ScreenActionBar } from '../components/ScreenActionBar';
 import { WinnerBanner } from '../components/WinnerBanner';
 import { adjustMatchGamesWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
@@ -88,120 +89,226 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
 
   return (
     <Screen testID="match-detail-safe-area" style={styles.screen}>
-      <View style={styles.headerRow}>
-        <Button variant="quiet" label="Zurück" onPress={onBack} style={styles.backButton} />
-        <Text style={styles.eyebrow}>Spiele</Text>
-      </View>
-
-      <Text style={styles.title}>
-        <Text style={styles.titleA}>{match.config.playerAName}</Text> vs{' '}
-        <Text style={styles.titleB}>{match.config.playerBName}</Text>
-      </Text>
-
-      {match.winner && winnerName ? (
-        <WinnerBanner player={match.winner} message={`${winnerName} gewinnt das Match!`} />
-      ) : null}
-
-      <View style={styles.standRow}>
-        <PlayerStandRow
-          label="Spiele"
-          player="A"
-          name={match.config.playerAName}
-          value={match.gamesWon.A}
-          editing={editing && !matchComplete}
-          onIncrement={() => adjustGamesWon('A', 1)}
-          onDecrement={() => adjustGamesWon('A', -1)}
-        />
-        <PlayerStandRow
-          label="Spiele"
-          player="B"
-          name={match.config.playerBName}
-          value={match.gamesWon.B}
-          editing={editing && !matchComplete}
-          onIncrement={() => adjustGamesWon('B', 1)}
-          onDecrement={() => adjustGamesWon('B', -1)}
-        />
-      </View>
-
-      {!matchComplete ? (
-        <Button
-          variant="quiet"
-          label={editing ? 'Fertig' : 'Editieren'}
-          onPress={() => setEditing((value) => !value)}
-          style={styles.editButton}
-        />
-      ) : null}
-
-      <View style={styles.listSection}>
-        <View style={styles.listHeader}>
-          <Text style={styles.listHeaderText}>Spielverlauf</Text>
-          <Text style={styles.listHeaderText}>Sätze</Text>
+      <ScrollView
+        style={styles.pageScroll}
+        contentContainerStyle={styles.page}
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
+      >
+        <View style={styles.headerRow}>
+          <Text style={styles.eyebrow}>Matchübersicht</Text>
+          <Text style={styles.format}>Best of {match.config.gamesToWinMatch * 2 - 1}</Text>
         </View>
-        <View style={styles.list}>
-          {match.games.map((game, index) => {
-            const isLive = !matchComplete && !game.winner && index === match.games.length - 1;
-            return (
-              <Pressable
-                key={index}
-                style={({ pressed }) => [
-                  styles.listItem,
-                  isLive && styles.listItemLive,
-                  pressed && styles.pressed,
-                ]}
-                accessibilityRole="button"
-                onPress={() => onOpenSetsOverview(matchId, index)}
-              >
-                <View style={styles.listItemCopy}>
-                  <View style={styles.listItemHeading}>
-                    <Text style={styles.listItemLabel}>Spiel {index + 1}</Text>
-                    {isLive ? <Text style={styles.liveLabel}>Live</Text> : null}
+
+        <View style={styles.stickyHero}>
+          <View style={styles.hero}>
+            <View style={styles.heroPlayer}>
+              <View style={[styles.heroMark, styles.heroMarkA]} />
+              <Text style={[styles.heroName, styles.titleA]} numberOfLines={1}>
+                {match.config.playerAName}
+              </Text>
+            </View>
+            <View style={styles.heroScore} accessibilityLabel="Gesamtstand">
+              <Text style={styles.heroScoreNumber}>{match.gamesWon.A}</Text>
+              <Text style={styles.heroScoreDivider}>:</Text>
+              <Text style={styles.heroScoreNumber}>{match.gamesWon.B}</Text>
+            </View>
+            <View style={[styles.heroPlayer, styles.heroPlayerB]}>
+              <Text style={[styles.heroName, styles.titleB]} numberOfLines={1}>
+                {match.config.playerBName}
+              </Text>
+              <View style={[styles.heroMark, styles.heroMarkB]} />
+            </View>
+          </View>
+        </View>
+
+        {match.winner && winnerName ? (
+          <WinnerBanner player={match.winner} message={`${winnerName} gewinnt das Match!`} />
+        ) : null}
+
+        <View style={styles.standing}>
+          <View style={styles.standingHeader}>
+            <Text style={styles.standingLabel}>Gesamtstand</Text>
+            {!matchComplete ? (
+              <Button
+                variant="quiet"
+                label={editing ? 'Fertig' : 'Editieren'}
+                onPress={() => setEditing((value) => !value)}
+                style={styles.editButton}
+              />
+            ) : null}
+          </View>
+          <PlayerStandRow
+            label="Spiele"
+            player="A"
+            name={match.config.playerAName}
+            value={match.gamesWon.A}
+            editing={editing && !matchComplete}
+            onIncrement={() => adjustGamesWon('A', 1)}
+            onDecrement={() => adjustGamesWon('A', -1)}
+          />
+          <View style={styles.standDivider} />
+          <PlayerStandRow
+            label="Spiele"
+            player="B"
+            name={match.config.playerBName}
+            value={match.gamesWon.B}
+            editing={editing && !matchComplete}
+            onIncrement={() => adjustGamesWon('B', 1)}
+            onDecrement={() => adjustGamesWon('B', -1)}
+          />
+        </View>
+
+        <View style={styles.listSection}>
+          <View style={styles.listHeader}>
+            <Text style={styles.listHeaderText}>Spielverlauf</Text>
+            <Text style={styles.listHeaderText}>Sätze</Text>
+          </View>
+          <View style={styles.list}>
+            {match.games.map((game, index) => {
+              const isLive = !matchComplete && !game.winner && index === match.games.length - 1;
+              return (
+                <Pressable
+                  key={index}
+                  style={({ pressed }) => [
+                    styles.listItem,
+                    isLive && styles.listItemLive,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  onPress={() => onOpenSetsOverview(matchId, index)}
+                >
+                  <View style={styles.listItemCopy}>
+                    <View style={styles.listItemHeading}>
+                      <Text style={styles.listItemLabel}>Spiel {index + 1}</Text>
+                      {isLive ? <Text style={styles.liveLabel}>Live</Text> : null}
+                    </View>
+                    {game.winner ? (
+                      <Text style={styles.listItemNote}>
+                        {game.winner === 'A' ? match.config.playerAName : match.config.playerBName}{' '}
+                        gewinnt
+                      </Text>
+                    ) : null}
                   </View>
-                  {game.winner ? (
-                    <Text style={styles.listItemNote}>
-                      {game.winner === 'A' ? match.config.playerAName : match.config.playerBName}{' '}
-                      gewinnt
-                    </Text>
-                  ) : null}
-                </View>
-                <Text style={styles.listItemScore}>
-                  {game.setsWon.A}:{game.setsWon.B}
-                </Text>
-                <Text style={styles.chevron} accessibilityElementsHidden>
-                  ›
-                </Text>
-              </Pressable>
-            );
-          })}
+                  <Text style={styles.listItemScore}>
+                    {game.setsWon.A}:{game.setsWon.B}
+                  </Text>
+                  <Text style={styles.chevron} accessibilityElementsHidden>
+                    ›
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
-      </View>
+      </ScrollView>
+
+      <ScreenActionBar label="Zurück" onPress={onBack} />
     </Screen>
   );
 }
 
 const useStyles = makeStyles((theme) => ({
   screen: {
-    gap: space.md,
+    gap: 0,
   },
   loading: {
     ...type.body,
     color: theme.color.textSecondary,
   },
-  backButton: {
-    minWidth: 86,
+  pageScroll: {
+    flex: 1,
+  },
+  page: {
+    paddingBottom: space.xl,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: space.md,
+    marginBottom: space.md,
   },
   eyebrow: {
     ...type.micro,
     color: theme.color.accent,
   },
-  title: {
-    ...type.display,
+  format: {
+    ...type.micro,
     color: theme.color.textSecondary,
+  },
+  stickyHero: {
+    backgroundColor: theme.color.bg,
+    paddingBottom: space.lg,
+    zIndex: 2,
+  },
+  hero: {
+    minHeight: 76,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderRadius: radius.md,
+    paddingHorizontal: space.md,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.12 : 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  heroPlayer: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  heroPlayerB: {
+    justifyContent: 'flex-end',
+  },
+  heroMark: {
+    width: 4,
+    height: 30,
+    borderRadius: 2,
+    flexShrink: 0,
+  },
+  heroMarkA: {
+    backgroundColor: theme.player.A.faceFill,
+  },
+  heroMarkB: {
+    backgroundColor: theme.player.B.faceFill,
+  },
+  heroName: {
+    ...type.label,
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '800',
+    flexShrink: 1,
+  },
+  heroScore: {
+    minWidth: 92,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.color.surfaceMuted,
+    borderRadius: radius.sm,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.sm,
+    marginHorizontal: space.sm,
+  },
+  heroScoreNumber: {
+    ...type.title,
+    fontSize: 25,
+    lineHeight: 29,
+    fontWeight: '900',
+    color: theme.color.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  heroScoreDivider: {
+    ...type.bodyStrong,
+    color: theme.color.textSecondary,
+    marginHorizontal: space.xs,
   },
   titleA: {
     color: theme.player.A.ink,
@@ -209,16 +316,37 @@ const useStyles = makeStyles((theme) => ({
   titleB: {
     color: theme.player.B.ink,
   },
-  standRow: {
+  standing: {
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderRadius: radius.md,
+    paddingHorizontal: space.lg,
+    marginTop: space.lg,
+  },
+  standingHeader: {
+    minHeight: 48,
     flexDirection: 'row',
-    gap: space.sm,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: stroke.hairline,
+    borderBottomColor: theme.color.border,
+  },
+  standingLabel: {
+    ...type.micro,
+    color: theme.color.textSecondary,
   },
   editButton: {
-    alignSelf: 'flex-end',
+    minHeight: 36,
+    paddingVertical: 4,
+  },
+  standDivider: {
+    height: stroke.hairline,
+    backgroundColor: theme.color.border,
   },
   listSection: {
     gap: space.sm,
-    flex: 1,
+    marginTop: space.lg,
   },
   listHeader: {
     flexDirection: 'row',
@@ -241,7 +369,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.color.surface,
     borderWidth: stroke.hairline,
     borderColor: theme.color.border,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     paddingVertical: space.sm,
     paddingHorizontal: space.lg,
   },
@@ -270,7 +398,11 @@ const useStyles = makeStyles((theme) => ({
   },
   liveLabel: {
     ...type.micro,
-    color: theme.color.accent,
+    color: theme.color.textOnStrong,
+    backgroundColor: theme.color.accentMarker,
+    borderRadius: radius.chip,
+    paddingHorizontal: space.sm,
+    paddingVertical: 2,
   },
   listItemScore: {
     ...type.stand,

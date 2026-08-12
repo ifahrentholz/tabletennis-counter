@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { Animated, Text, View } from 'react-native';
 
 import type { Player } from '../domain/match';
-import { makeStyles, radius, space, stroke, type } from '../theme';
+import { makeStyles, space, stroke, type } from '../theme';
 
 export interface WinnerBannerProps {
   player: Player;
@@ -50,7 +50,10 @@ export function WinnerBanner({ player, message }: WinnerBannerProps) {
       ]}
     >
       <View style={[styles.bar, player === 'A' ? styles.barA : styles.barB]} />
-      <Text style={[styles.message, player === 'A' ? styles.inkA : styles.inkB]}>{message}</Text>
+      <View style={styles.copy}>
+        <Text style={styles.label}>Ergebnis</Text>
+        <Text style={[styles.message, player === 'A' ? styles.inkA : styles.inkB]}>{message}</Text>
+      </View>
     </Animated.View>
   );
 }
@@ -59,18 +62,15 @@ const useStyles = makeStyles((theme) => ({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.md,
-    backgroundColor: theme.color.surface,
-    borderRadius: radius.md,
-    borderWidth: stroke.hairline,
+    gap: space.sm,
+    borderTopWidth: stroke.hairline,
+    borderBottomWidth: stroke.hairline,
     borderColor: theme.color.border,
-    paddingVertical: space.md,
-    paddingRight: space.lg,
-    overflow: 'hidden',
+    paddingVertical: space.sm,
   },
   bar: {
     alignSelf: 'stretch',
-    width: stroke.bar + 2,
+    width: stroke.line,
   },
   barA: {
     backgroundColor: theme.player.A.ink,
@@ -78,14 +78,25 @@ const useStyles = makeStyles((theme) => ({
   barB: {
     backgroundColor: theme.player.B.ink,
   },
-  message: {
-    ...type.title,
+  copy: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
     flexShrink: 1,
   },
+  label: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+  },
+  message: {
+    ...type.label,
+    flexShrink: 1,
+    color: theme.color.textPrimary,
+  },
   inkA: {
-    color: theme.player.A.ink,
+    color: theme.color.textPrimary,
   },
   inkB: {
-    color: theme.player.B.ink,
+    color: theme.color.textPrimary,
   },
 }));

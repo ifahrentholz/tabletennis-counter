@@ -39,7 +39,11 @@ export function PlayerTag({ player, name, size = 'micro', chip = true }: PlayerT
 
   return (
     <View style={styles.container}>
-      {chip ? <View style={[styles.chip, player === 'A' ? styles.chipA : styles.chipB]} /> : null}
+      {chip ? (
+        <View style={[styles.chip, player === 'A' ? styles.chipA : styles.chipB]}>
+          <Text style={styles.chipText}>{player}</Text>
+        </View>
+      ) : null}
       <Text
         style={[
           size === 'title' ? styles.nameTitle : styles.nameMicro,
@@ -61,10 +65,12 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 1,
   },
   chip: {
-    width: 5,
-    height: 20,
+    width: 26,
+    height: 26,
     borderRadius: radius.chip,
     borderWidth: stroke.hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipA: {
     backgroundColor: theme.player.A.chipFill,
@@ -74,8 +80,15 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.player.B.chipFill,
     borderColor: theme.player.B.chipBorder,
   },
+  chipText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '900',
+    color: theme.color.actionInk,
+  },
   nameMicro: {
     ...type.label,
+    fontWeight: '800',
     flexShrink: 1,
   },
   nameTitle: {

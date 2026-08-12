@@ -28,10 +28,11 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
+import { ScreenActionBar } from '../components/ScreenActionBar';
 import { adjustGameSetsWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
@@ -92,31 +93,39 @@ export function SetsOverviewScreen({
   return (
     <Screen testID="sets-overview-safe-area" style={styles.screen}>
       <View style={styles.headerRow}>
-        <Button variant="quiet" label="Zurück" onPress={onBack} style={styles.backButton} />
         <Text style={styles.eyebrow}>Sätze</Text>
       </View>
 
-      <Text style={styles.title}>Spiel {gameIndex + 1}</Text>
+      <View style={styles.hero}>
+        <Text style={styles.heroLabel}>Match Center</Text>
+        <Text style={styles.title}>Spiel {gameIndex + 1}</Text>
+      </View>
 
-      <View style={styles.standRow}>
-        <PlayerStandRow
-          label="Sätze"
-          player="A"
-          name={match.config.playerAName}
-          value={game.setsWon.A}
-          editing={editing && !matchComplete}
-          onIncrement={() => adjustSetsWon('A', 1)}
-          onDecrement={() => adjustSetsWon('A', -1)}
-        />
-        <PlayerStandRow
-          label="Sätze"
-          player="B"
-          name={match.config.playerBName}
-          value={game.setsWon.B}
-          editing={editing && !matchComplete}
-          onIncrement={() => adjustSetsWon('B', 1)}
-          onDecrement={() => adjustSetsWon('B', -1)}
-        />
+      <View style={styles.scoreboard}>
+        <View style={styles.scoreboardHeader}>
+          <Text style={styles.scoreboardLabel}>Satzstand</Text>
+          <Text style={styles.scoreboardMeta}>First to {match.config.setsToWinGame}</Text>
+        </View>
+        <View style={styles.standRow}>
+          <PlayerStandRow
+            label="Sätze"
+            player="A"
+            name={match.config.playerAName}
+            value={game.setsWon.A}
+            editing={editing && !matchComplete}
+            onIncrement={() => adjustSetsWon('A', 1)}
+            onDecrement={() => adjustSetsWon('A', -1)}
+          />
+          <PlayerStandRow
+            label="Sätze"
+            player="B"
+            name={match.config.playerBName}
+            value={game.setsWon.B}
+            editing={editing && !matchComplete}
+            onIncrement={() => adjustSetsWon('B', 1)}
+            onDecrement={() => adjustSetsWon('B', -1)}
+          />
+        </View>
       </View>
 
       {!matchComplete ? (
@@ -133,7 +142,11 @@ export function SetsOverviewScreen({
           <Text style={styles.listHeaderText}>Satzverlauf</Text>
           <Text style={styles.listHeaderText}>Punkte</Text>
         </View>
-        <View style={styles.list}>
+        <ScrollView
+          style={styles.listScroll}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+        >
           {game.sets.map((set, index) => {
             const isLive =
               !matchComplete && isCurrentGame && !set.winner && index === game.sets.length - 1;
@@ -169,8 +182,10 @@ export function SetsOverviewScreen({
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
+
+      <ScreenActionBar label="Zurück" onPress={onBack} />
     </Screen>
   );
 }
@@ -183,9 +198,6 @@ const useStyles = makeStyles((theme) => ({
     ...type.body,
     color: theme.color.textSecondary,
   },
-  backButton: {
-    minWidth: 86,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -196,6 +208,13 @@ const useStyles = makeStyles((theme) => ({
     ...type.micro,
     color: theme.color.accent,
   },
+  hero: {
+    gap: space.xs,
+  },
+  heroLabel: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+  },
   title: {
     ...type.display,
     color: theme.color.textPrimary,
@@ -204,6 +223,33 @@ const useStyles = makeStyles((theme) => ({
   standRow: {
     flexDirection: 'row',
     gap: space.sm,
+  },
+  scoreboard: {
+    gap: space.sm,
+    backgroundColor: theme.color.surfaceStrong,
+    borderRadius: radius.lg,
+    padding: space.sm,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.2 : 0.09,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  scoreboardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: space.sm,
+    paddingTop: space.xs,
+  },
+  scoreboardLabel: {
+    ...type.micro,
+    color: theme.color.textOnStrong,
+  },
+  scoreboardMeta: {
+    ...type.micro,
+    color: theme.color.textOnStrong,
+    opacity: 0.62,
   },
   editButton: {
     alignSelf: 'flex-end',
@@ -224,6 +270,10 @@ const useStyles = makeStyles((theme) => ({
   },
   list: {
     gap: space.sm,
+    paddingBottom: space.md,
+  },
+  listScroll: {
+    flex: 1,
   },
   listItem: {
     minHeight: 64,
@@ -233,7 +283,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.color.surface,
     borderWidth: stroke.hairline,
     borderColor: theme.color.border,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     paddingVertical: space.sm,
     paddingHorizontal: space.lg,
   },
@@ -262,7 +312,11 @@ const useStyles = makeStyles((theme) => ({
   },
   liveLabel: {
     ...type.micro,
-    color: theme.color.accent,
+    color: theme.color.textOnStrong,
+    backgroundColor: theme.color.accentMarker,
+    borderRadius: radius.chip,
+    paddingHorizontal: space.sm,
+    paddingVertical: 2,
   },
   listItemScore: {
     ...type.stand,

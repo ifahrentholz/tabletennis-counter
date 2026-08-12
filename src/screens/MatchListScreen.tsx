@@ -37,11 +37,11 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
-import { Button } from '../components/Button';
 import { PlayerTag } from '../components/PlayerTag';
 import { Screen } from '../components/Screen';
+import { ScreenActionBar } from '../components/ScreenActionBar';
 import { isMatchComplete } from '../domain/match';
 import { deleteMatch, listMatches } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
@@ -96,11 +96,14 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
   return (
     <Screen testID="match-list-safe-area" style={styles.screen}>
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>Match Center</Text>
-        <Text style={styles.title}>Meine Matches</Text>
+        <View style={styles.brandMark}>
+          <Text style={styles.brandMarkText}>TT</Text>
+        </View>
+        <View style={styles.headerCopy}>
+          <Text style={styles.eyebrow}>Match Center</Text>
+          <Text style={styles.title}>Meine Matches</Text>
+        </View>
       </View>
-
-      <Button label="Neues Match" onPress={onCreateMatch} style={styles.newMatchButton} />
 
       {matches === null ? (
         <Text style={styles.loading}>Lade…</Text>
@@ -113,12 +116,16 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
           <Text style={styles.emptyText}>Noch keine Matches vorhanden.</Text>
         </View>
       ) : (
-        <View style={styles.list}>
+        <ScrollView
+          style={styles.listScroll}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+        >
           {matches.map((stored) => {
             const label = labelFor(stored);
             const complete = isMatchComplete(stored.match);
             return (
-              <View key={stored.id} style={styles.listItem}>
+              <View key={stored.id} style={styles.matchCard}>
                 <Pressable
                   style={({ pressed }) => [styles.matchButton, pressed && styles.pressed]}
                   accessibilityRole="button"
@@ -135,24 +142,60 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
                     </View>
                   </View>
                   <View style={styles.players}>
-                    <PlayerTag player="A" name={stored.match.config.playerAName} />
-                    <Text style={styles.versus}>vs</Text>
-                    <PlayerTag player="B" name={stored.match.config.playerBName} />
+                    <View style={styles.playerScoreRow}>
+                      <PlayerTag player="A" name={stored.match.config.playerAName} />
+                      <Text style={[styles.matchScore, styles.scoreA]}>
+                        {stored.match.gamesWon.A}
+                      </Text>
+                    </View>
+                    <View style={styles.scoreDivider} />
+                    <View style={styles.playerScoreRow}>
+                      <PlayerTag player="B" name={stored.match.config.playerBName} />
+                      <Text style={[styles.matchScore, styles.scoreB]}>
+                        {stored.match.gamesWon.B}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.cardFooter}>
+                    <Text style={styles.openLabel}>Match öffnen</Text>
+                    <Text style={styles.openChevron} accessibilityElementsHidden>
+                      ›
+                    </Text>
                   </View>
                 </Pressable>
-                <Button
-                  variant="quiet"
-                  label="×"
+                <Pressable
+                  accessibilityRole="button"
                   accessibilityLabel={`${label} löschen`}
                   onPress={() => handleDelete(stored.id, label)}
-                  style={styles.deleteButton}
-                />
+                  hitSlop={space.xs}
+                  style={({ pressed }) => [styles.deleteButton, pressed && styles.deletePressed]}
+                >
+                  <TrashIcon />
+                </Pressable>
               </View>
             );
           })}
-        </View>
+        </ScrollView>
       )}
+
+      <ScreenActionBar label="Neues Match" onPress={onCreateMatch} />
     </Screen>
+  );
+}
+
+/** Small dependency-free trash symbol, drawn from the active theme. */
+function TrashIcon() {
+  const styles = useStyles();
+
+  return (
+    <View style={styles.trashIcon} accessibilityElementsHidden>
+      <View style={styles.trashHandle} />
+      <View style={styles.trashLid} />
+      <View style={styles.trashBin}>
+        <View style={styles.trashSlot} />
+        <View style={styles.trashSlot} />
+      </View>
+    </View>
   );
 }
 
@@ -161,8 +204,29 @@ const useStyles = makeStyles((theme) => ({
     gap: space.lg,
   },
   header: {
-    gap: space.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
     paddingTop: space.sm,
+  },
+  headerCopy: {
+    gap: 0,
+  },
+  brandMark: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.color.surfaceStrong,
+    borderBottomWidth: stroke.line,
+    borderBottomColor: theme.color.actionFill,
+  },
+  brandMarkText: {
+    ...type.title,
+    fontWeight: '900',
+    letterSpacing: -1,
+    color: theme.color.textOnStrong,
   },
   eyebrow: {
     ...type.micro,
@@ -171,9 +235,6 @@ const useStyles = makeStyles((theme) => ({
   title: {
     ...type.display,
     color: theme.color.textPrimary,
-  },
-  newMatchButton: {
-    alignSelf: 'stretch',
   },
   loading: {
     ...type.body,
@@ -208,34 +269,36 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.color.actionFill,
   },
   list: {
-    gap: space.sm,
+    gap: space.xl,
+    paddingBottom: space.lg,
   },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.sm,
-  },
-  matchButton: {
+  listScroll: {
     flex: 1,
-    justifyContent: 'center',
-    gap: space.md,
+  },
+  matchCard: {
+    position: 'relative',
     backgroundColor: theme.color.surface,
     borderWidth: stroke.hairline,
     borderColor: theme.color.border,
     borderRadius: radius.lg,
-    paddingVertical: space.lg,
-    paddingHorizontal: space.lg,
     shadowColor: theme.color.shadow,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: theme.scheme === 'dark' ? 0.22 : 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: theme.scheme === 'dark' ? 0.14 : 0.06,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  matchButton: {
+    justifyContent: 'center',
+    borderRadius: radius.lg,
   },
   matchHeadline: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: space.sm,
+    paddingTop: space.lg,
+    paddingBottom: space.sm,
+    paddingHorizontal: space.lg,
   },
   matchLabel: {
     ...type.micro,
@@ -261,20 +324,110 @@ const useStyles = makeStyles((theme) => ({
     color: theme.color.textSecondary,
   },
   players: {
-    gap: space.sm,
+    paddingHorizontal: space.lg,
+    gap: space.xs,
   },
-  versus: {
-    ...type.micro,
-    color: theme.color.textSecondary,
-    marginLeft: space.md,
+  playerScoreRow: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.md,
+  },
+  scoreDivider: {
+    height: stroke.hairline,
+    backgroundColor: theme.color.border,
+  },
+  matchScore: {
+    ...type.title,
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  scoreA: {
+    color: theme.player.A.ink,
+  },
+  scoreB: {
+    color: theme.player.B.ink,
   },
   pressed: {
-    opacity: 0.78,
-    transform: [{ scale: 0.99 }],
+    opacity: 0.72,
+  },
+  cardFooter: {
+    minHeight: hit.comfortable,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    marginTop: space.md,
+    paddingLeft: space.lg,
+    paddingRight: hit.comfortable + space.lg,
+    borderTopWidth: stroke.hairline,
+    borderTopColor: theme.color.border,
+  },
+  openLabel: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+  },
+  openChevron: {
+    ...type.title,
+    color: theme.color.textSecondary,
+    marginTop: -2,
   },
   deleteButton: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
     width: hit.comfortable,
     height: hit.comfortable,
-    paddingHorizontal: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: stroke.hairline,
+    borderLeftColor: theme.color.border,
+    borderBottomRightRadius: radius.lg,
+    backgroundColor: 'transparent',
+  },
+  deletePressed: {
+    backgroundColor: theme.color.surfaceMuted,
+    opacity: 0.72,
+  },
+  trashIcon: {
+    width: 20,
+    height: 22,
+    alignItems: 'center',
+  },
+  trashHandle: {
+    width: 8,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: theme.color.textSecondary,
+  },
+  trashLid: {
+    width: 18,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: theme.color.textSecondary,
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  trashBin: {
+    width: 14,
+    height: 14,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 3,
+    borderWidth: 2,
+    borderTopWidth: 0,
+    borderColor: theme.color.textSecondary,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    paddingTop: 3,
+  },
+  trashSlot: {
+    width: 2,
+    height: 7,
+    borderRadius: 1,
+    backgroundColor: theme.color.textSecondary,
   },
 }));

@@ -20,7 +20,7 @@
 import { Pressable, Text } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 
-import { hit, makeStyles, radius, space, stroke, type } from '../theme';
+import { hit, makeStyles, radius, space, type } from '../theme';
 
 export interface ButtonProps {
   label: string;
@@ -84,20 +84,20 @@ const useStyles = makeStyles((theme) => ({
   },
   primary: {
     backgroundColor: theme.color.actionFill,
-    borderWidth: stroke.hairline,
+    borderWidth: 0,
     borderColor: theme.color.actionFill,
-    paddingVertical: space.lg,
+    paddingVertical: space.md + 2,
     paddingHorizontal: space.xl,
     shadowColor: theme.color.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: theme.scheme === 'dark' ? 0.28 : 0.14,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.2 : 0.1,
+    shadowRadius: 7,
+    elevation: 2,
   },
   quiet: {
-    borderWidth: stroke.hairline,
-    borderColor: theme.color.border,
-    backgroundColor: theme.color.surface,
+    borderWidth: 0,
+    borderColor: 'transparent',
+    backgroundColor: theme.color.surfaceMuted,
     paddingVertical: space.sm,
   },
   large: {
@@ -113,10 +113,12 @@ const useStyles = makeStyles((theme) => ({
   primaryLabel: {
     ...type.action,
     color: theme.color.actionInk,
+    letterSpacing: 0.1,
   },
   quietLabel: {
     ...type.microAction,
     color: theme.color.quietInk,
+    fontWeight: '800',
   },
   largeLabel: {
     ...type.undo,

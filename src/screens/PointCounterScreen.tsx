@@ -39,6 +39,7 @@ import { PlayerTag } from '../components/PlayerTag';
 import { RubberFace } from '../components/RubberFace';
 import { ScoreNumeral } from '../components/ScoreNumeral';
 import { Screen } from '../components/Screen';
+import { ScreenActionBar } from '../components/ScreenActionBar';
 import { WinnerBanner } from '../components/WinnerBanner';
 import { addPoint, isMatchComplete, undoPoint } from '../domain/match';
 import type { Match, Player } from '../domain/match';
@@ -104,9 +105,11 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
   return (
     <Screen testID="point-counter-safe-area" style={styles.screen}>
       <View style={styles.topRow}>
-        <Button variant="quiet" label="Zurück" onPress={onBack} />
         <View style={styles.positionWrap}>
           {!matchComplete ? <View style={styles.liveDot} /> : null}
+          <Text style={matchComplete ? styles.finalWord : styles.liveWord}>
+            {matchComplete ? 'Final' : 'Live'}
+          </Text>
           <Text
             style={[styles.position, matchComplete ? styles.positionDone : styles.positionLive]}
           >
@@ -141,6 +144,8 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
           onUndo={() => applyAndPersist(undoPoint)}
         />
       </View>
+
+      <ScreenActionBar label="Zurück" onPress={onBack} />
     </Screen>
   );
 }
@@ -172,17 +177,32 @@ function PlayerColumn({
     <View
       style={[styles.playerColumn, player === 'A' ? styles.playerColumnA : styles.playerColumnB]}
     >
-      <View style={styles.readBlock}>
+      <View style={styles.teamHeader}>
         <PlayerTag player={player} name={name} size="title" />
+        <Text style={styles.sideLabel}>{player === 'A' ? 'Spieler A' : 'Spieler B'}</Text>
+      </View>
+      <View style={styles.readBlock}>
         <ScoreNumeral player={player} name={name} points={points} />
         <View style={styles.subScores}>
-          <Text style={styles.subScore} accessibilityLabel={`Sätze ${name}`}>
-            Sätze: {setsWon}
-          </Text>
+          <View style={styles.subScoreBlock}>
+            <Text
+              style={styles.subScore}
+              accessibilityLabel={`Sätze ${name}`}
+              numberOfLines={1}
+            >
+              Sätze: {setsWon}
+            </Text>
+          </View>
           <View style={styles.subScoreRule} />
-          <Text style={styles.subScore} accessibilityLabel={`Spiele ${name}`}>
-            Spiele: {gamesWon}
-          </Text>
+          <View style={styles.subScoreBlock}>
+            <Text
+              style={styles.subScore}
+              accessibilityLabel={`Spiele ${name}`}
+              numberOfLines={1}
+            >
+              Spiele: {gamesWon}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -218,17 +238,16 @@ const useStyles = makeStyles((theme) => ({
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     gap: space.md,
   },
   positionWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.sm,
-    minHeight: 36,
-    backgroundColor: theme.color.surface,
-    borderWidth: stroke.hairline,
-    borderColor: theme.color.border,
+    minHeight: 40,
+    backgroundColor: theme.color.surfaceStrong,
+    borderWidth: 0,
     borderRadius: radius.md,
     paddingHorizontal: space.md,
   },
@@ -238,6 +257,14 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: radius.chip,
     backgroundColor: theme.color.accentMarker,
   },
+  liveWord: {
+    ...type.micro,
+    color: theme.color.accent,
+  },
+  finalWord: {
+    ...type.micro,
+    color: theme.color.textOnStrong,
+  },
   position: {
     ...type.micro,
     fontVariant: ['tabular-nums'],
@@ -245,32 +272,35 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 1,
   },
   positionLive: {
-    color: theme.color.accent,
+    color: theme.color.textOnStrong,
   },
   positionDone: {
-    color: theme.color.textSecondary,
+    color: theme.color.textOnStrong,
+    opacity: 0.72,
   },
   scoreRow: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'stretch',
-    gap: space.sm,
+    gap: 4,
+    backgroundColor: theme.color.surfaceStrong,
+    borderRadius: radius.lg,
+    padding: 4,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.24 : 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
   playerColumn: {
     flex: 1,
     gap: space.sm,
     minWidth: 0,
     backgroundColor: theme.color.surface,
-    borderWidth: stroke.hairline,
-    borderColor: theme.color.border,
-    borderTopWidth: stroke.bar,
-    borderRadius: radius.lg,
+    borderWidth: 0,
+    borderTopWidth: 4,
+    borderRadius: radius.md,
     padding: space.sm,
-    shadowColor: theme.color.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: theme.scheme === 'dark' ? 0.24 : 0.1,
-    shadowRadius: 8,
-    elevation: 3,
   },
   playerColumnA: {
     borderTopColor: theme.player.A.ink,
@@ -278,19 +308,37 @@ const useStyles = makeStyles((theme) => ({
   playerColumnB: {
     borderTopColor: theme.player.B.ink,
   },
+  teamHeader: {
+    minHeight: 48,
+    justifyContent: 'space-between',
+    gap: space.xs,
+  },
+  sideLabel: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+    paddingLeft: 34,
+  },
   readBlock: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: space.sm,
+    gap: space.md,
     minWidth: 0,
   },
   subScores: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space.sm,
+    gap: space.md,
     width: '100%',
+    backgroundColor: theme.color.surfaceMuted,
+    borderRadius: radius.md,
+    paddingVertical: space.sm,
+  },
+  subScoreBlock: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 0,
   },
   subScoreRule: {
     width: stroke.hairline,
@@ -299,7 +347,9 @@ const useStyles = makeStyles((theme) => ({
   },
   subScore: {
     ...type.micro,
+    letterSpacing: 0.25,
     fontVariant: ['tabular-nums'],
-    color: theme.color.textSecondary,
+    color: theme.color.textPrimary,
+    textAlign: 'center',
   },
 }));

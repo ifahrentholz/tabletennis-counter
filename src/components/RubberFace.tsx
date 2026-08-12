@@ -16,7 +16,7 @@
  * Purely presentational — props in, view out.
  */
 
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import type { Player } from '../domain/match';
 import { hit, makeStyles, radius, space, type } from '../theme';
@@ -52,23 +52,26 @@ export function RubberFace({
         disabled && styles.disabled,
       ]}
     >
-      <Text style={[styles.label, player === 'A' ? styles.labelA : styles.labelB]}>{label}</Text>
+      <View style={styles.copy}>
+        <Text style={styles.kicker}>PUNKT</Text>
+        <Text style={[styles.label, player === 'A' ? styles.labelA : styles.labelB]}>{label}</Text>
+      </View>
     </Pressable>
   );
 }
 
 const useStyles = makeStyles((theme) => ({
   face: {
-    minHeight: hit.slab - space.md,
-    borderRadius: radius.lg,
+    minHeight: hit.slab,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: space.sm,
     shadowColor: theme.color.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: theme.scheme === 'dark' ? 0.3 : 0.18,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.18 : 0.1,
+    shadowRadius: 6,
+    elevation: 2,
   },
   faceA: {
     backgroundColor: theme.player.A.faceFill,
@@ -89,6 +92,16 @@ const useStyles = makeStyles((theme) => ({
   },
   label: {
     ...type.face,
+    lineHeight: 38,
+  },
+  copy: {
+    alignItems: 'center',
+    gap: 0,
+  },
+  kicker: {
+    ...type.micro,
+    color: theme.color.actionInk,
+    opacity: 0.78,
   },
   labelA: {
     color: theme.player.A.faceInk,
