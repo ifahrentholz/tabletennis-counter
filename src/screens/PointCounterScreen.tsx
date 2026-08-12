@@ -35,7 +35,6 @@ import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { Button } from '../components/Button';
-import { PlayerTag } from '../components/PlayerTag';
 import { RubberFace } from '../components/RubberFace';
 import { ScoreNumeral } from '../components/ScoreNumeral';
 import { Screen } from '../components/Screen';
@@ -105,6 +104,7 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
   return (
     <Screen testID="point-counter-safe-area" style={styles.screen}>
       <View style={styles.topRow}>
+        <Text style={styles.eyebrow}>Punktestand</Text>
         <View style={styles.positionWrap}>
           {!matchComplete ? <View style={styles.liveDot} /> : null}
           <Text style={matchComplete ? styles.finalWord : styles.liveWord}>
@@ -174,12 +174,17 @@ function PlayerColumn({
   const styles = useStyles();
 
   return (
-    <View
-      style={[styles.playerColumn, player === 'A' ? styles.playerColumnA : styles.playerColumnB]}
-    >
+    <View style={styles.playerColumn}>
       <View style={styles.teamHeader}>
-        <PlayerTag player={player} name={name} size="title" />
-        <Text style={styles.sideLabel}>{player === 'A' ? 'Spieler A' : 'Spieler B'}</Text>
+        <View
+          style={[styles.playerMark, player === 'A' ? styles.playerMarkA : styles.playerMarkB]}
+        />
+        <Text
+          style={[styles.playerName, player === 'A' ? styles.playerNameA : styles.playerNameB]}
+          numberOfLines={1}
+        >
+          {name}
+        </Text>
       </View>
       <View style={styles.readBlock}>
         <ScoreNumeral player={player} name={name} points={points} />
@@ -238,16 +243,21 @@ const useStyles = makeStyles((theme) => ({
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     gap: space.md,
+  },
+  eyebrow: {
+    ...type.micro,
+    color: theme.color.accent,
   },
   positionWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.sm,
     minHeight: 40,
-    backgroundColor: theme.color.surfaceStrong,
-    borderWidth: 0,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
     borderRadius: radius.md,
     paddingHorizontal: space.md,
   },
@@ -259,11 +269,11 @@ const useStyles = makeStyles((theme) => ({
   },
   liveWord: {
     ...type.micro,
-    color: theme.color.accent,
+    color: theme.color.accentMarker,
   },
   finalWord: {
     ...type.micro,
-    color: theme.color.textOnStrong,
+    color: theme.color.textPrimary,
   },
   position: {
     ...type.micro,
@@ -272,51 +282,59 @@ const useStyles = makeStyles((theme) => ({
     flexShrink: 1,
   },
   positionLive: {
-    color: theme.color.textOnStrong,
+    color: theme.color.textSecondary,
   },
   positionDone: {
-    color: theme.color.textOnStrong,
-    opacity: 0.72,
+    color: theme.color.textSecondary,
   },
   scoreRow: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'stretch',
-    gap: 4,
-    backgroundColor: theme.color.surfaceStrong,
-    borderRadius: radius.lg,
-    padding: 4,
-    shadowColor: theme.color.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: theme.scheme === 'dark' ? 0.24 : 0.12,
-    shadowRadius: 12,
-    elevation: 4,
+    gap: space.sm,
   },
   playerColumn: {
     flex: 1,
     gap: space.sm,
     minWidth: 0,
     backgroundColor: theme.color.surface,
-    borderWidth: 0,
-    borderTopWidth: 4,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
     borderRadius: radius.md,
     padding: space.sm,
-  },
-  playerColumnA: {
-    borderTopColor: theme.player.A.ink,
-  },
-  playerColumnB: {
-    borderTopColor: theme.player.B.ink,
+    shadowColor: theme.color.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.12 : 0.04,
+    shadowRadius: 5,
+    elevation: 1,
   },
   teamHeader: {
-    minHeight: 48,
-    justifyContent: 'space-between',
-    gap: space.xs,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
   },
-  sideLabel: {
-    ...type.micro,
-    color: theme.color.textSecondary,
-    paddingLeft: 34,
+  playerMark: {
+    width: 4,
+    height: 30,
+    borderRadius: 2,
+    flexShrink: 0,
+  },
+  playerMarkA: {
+    backgroundColor: theme.player.A.faceFill,
+  },
+  playerMarkB: {
+    backgroundColor: theme.player.B.faceFill,
+  },
+  playerName: {
+    ...type.title,
+    flexShrink: 1,
+  },
+  playerNameA: {
+    color: theme.player.A.ink,
+  },
+  playerNameB: {
+    color: theme.player.B.ink,
   },
   readBlock: {
     flex: 1,
