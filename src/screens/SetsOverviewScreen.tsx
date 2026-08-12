@@ -93,7 +93,8 @@ export function SetsOverviewScreen({
   return (
     <Screen testID="sets-overview-safe-area" style={styles.screen}>
       <View style={styles.headerRow}>
-        <Text style={styles.eyebrow}>Sätze</Text>
+        <Text style={styles.eyebrow}>Satzübersicht</Text>
+        <Text style={styles.format}>First to {match.config.setsToWinGame}</Text>
       </View>
 
       <View style={styles.hero}>
@@ -104,38 +105,35 @@ export function SetsOverviewScreen({
       <View style={styles.scoreboard}>
         <View style={styles.scoreboardHeader}>
           <Text style={styles.scoreboardLabel}>Satzstand</Text>
-          <Text style={styles.scoreboardMeta}>First to {match.config.setsToWinGame}</Text>
+          {!matchComplete ? (
+            <Button
+              variant="quiet"
+              label={editing ? 'Fertig' : 'Editieren'}
+              onPress={() => setEditing((value) => !value)}
+              style={styles.editButton}
+            />
+          ) : null}
         </View>
-        <View style={styles.standRow}>
-          <PlayerStandRow
-            label="Sätze"
-            player="A"
-            name={match.config.playerAName}
-            value={game.setsWon.A}
-            editing={editing && !matchComplete}
-            onIncrement={() => adjustSetsWon('A', 1)}
-            onDecrement={() => adjustSetsWon('A', -1)}
-          />
-          <PlayerStandRow
-            label="Sätze"
-            player="B"
-            name={match.config.playerBName}
-            value={game.setsWon.B}
-            editing={editing && !matchComplete}
-            onIncrement={() => adjustSetsWon('B', 1)}
-            onDecrement={() => adjustSetsWon('B', -1)}
-          />
-        </View>
-      </View>
-
-      {!matchComplete ? (
-        <Button
-          variant="quiet"
-          label={editing ? 'Fertig' : 'Editieren'}
-          onPress={() => setEditing((value) => !value)}
-          style={styles.editButton}
+        <PlayerStandRow
+          label="Sätze"
+          player="A"
+          name={match.config.playerAName}
+          value={game.setsWon.A}
+          editing={editing && !matchComplete}
+          onIncrement={() => adjustSetsWon('A', 1)}
+          onDecrement={() => adjustSetsWon('A', -1)}
         />
-      ) : null}
+        <View style={styles.standDivider} />
+        <PlayerStandRow
+          label="Sätze"
+          player="B"
+          name={match.config.playerBName}
+          value={game.setsWon.B}
+          editing={editing && !matchComplete}
+          onIncrement={() => adjustSetsWon('B', 1)}
+          onDecrement={() => adjustSetsWon('B', -1)}
+        />
+      </View>
 
       <View style={styles.listSection}>
         <View style={styles.listHeader}>
@@ -208,6 +206,10 @@ const useStyles = makeStyles((theme) => ({
     ...type.micro,
     color: theme.color.accent,
   },
+  format: {
+    ...type.micro,
+    color: theme.color.textSecondary,
+  },
   hero: {
     gap: space.xs,
   },
@@ -220,39 +222,37 @@ const useStyles = makeStyles((theme) => ({
     color: theme.color.textPrimary,
     fontVariant: ['tabular-nums'],
   },
-  standRow: {
-    flexDirection: 'row',
-    gap: space.sm,
-  },
   scoreboard: {
-    gap: space.sm,
-    backgroundColor: theme.color.surfaceStrong,
-    borderRadius: radius.lg,
-    padding: space.sm,
+    backgroundColor: theme.color.surface,
+    borderWidth: stroke.hairline,
+    borderColor: theme.color.border,
+    borderRadius: radius.md,
+    paddingHorizontal: space.lg,
     shadowColor: theme.color.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: theme.scheme === 'dark' ? 0.2 : 0.09,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: theme.scheme === 'dark' ? 0.12 : 0.04,
+    shadowRadius: 5,
+    elevation: 1,
   },
   scoreboardHeader: {
+    minHeight: 48,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: space.sm,
-    paddingTop: space.xs,
+    borderBottomWidth: stroke.hairline,
+    borderBottomColor: theme.color.border,
   },
   scoreboardLabel: {
     ...type.micro,
-    color: theme.color.textOnStrong,
-  },
-  scoreboardMeta: {
-    ...type.micro,
-    color: theme.color.textOnStrong,
-    opacity: 0.62,
+    color: theme.color.textSecondary,
   },
   editButton: {
-    alignSelf: 'flex-end',
+    minHeight: 36,
+    paddingVertical: 4,
+  },
+  standDivider: {
+    height: stroke.hairline,
+    backgroundColor: theme.color.border,
   },
   listSection: {
     gap: space.sm,
