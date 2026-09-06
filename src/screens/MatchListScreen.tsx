@@ -178,15 +178,16 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
 
       <ScreenActionBar label="Neues Match" onPress={onCreateMatch} />
 
-      <ConfirmDialog
-        visible={pendingDelete !== null}
-        title="Match löschen"
-        message={pendingDelete ? `Möchtest du „${labelFor(pendingDelete)}“ wirklich löschen?` : ''}
-        confirmLabel="Löschen"
-        cancelLabel="Abbrechen"
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setPendingDelete(null)}
-      />
+      {pendingDelete ? (
+        <ConfirmDialog
+          title="Match löschen"
+          message={`Möchtest du „${labelFor(pendingDelete)}“ wirklich löschen?`}
+          confirmLabel="Löschen"
+          cancelLabel="Abbrechen"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      ) : null}
     </Screen>
   );
 }
