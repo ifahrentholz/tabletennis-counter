@@ -33,3 +33,25 @@ jobs:
 
       - name: Test
         run: npm test -- --ci
+
+  build-web:
+    name: Web build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The web target shares every source file with native, but not its
+      # build: a native-only API slipping into a screen (as `Alert` once did,
+      # see ADR 0010) only shows up when the web bundle is actually built.
+      - name: Build web bundle and service worker
+        run: npm run build:web

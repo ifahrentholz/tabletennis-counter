@@ -287,3 +287,47 @@ install`), and each of the 5 screens' (`MatchListScreen`,
   See [ADR 0009](docs/adr/0009-visual-design-system.md) for the full decision
   record, including the measured WCAG contrast ratios for both schemes and
   the follow-ups deliberately left alone.
+
+- Web target: the app now also runs in the browser and installs as a PWA
+  (see [ADR 0010](docs/adr/0010-web-target-pwa.md)):
+  - `react-dom`, `react-native-web` and `@expo/metro-runtime` add web as a
+    third platform to the **same** codebase — iOS and Android are unchanged
+    and still built from this repository. All five screens, the theme system
+    and the presentational components run as-is, because the app only ever
+    used React Native primitives that `react-native-web` implements.
+  - Persistence needed no change: the pure domain engine has no React Native
+    import at all, and `async-storage` resolves to a `localStorage`-backed
+    implementation on web.
+  - Installable and fully offline-capable: a web app manifest with maskable
+    and Apple touch icons, plus a Workbox-generated service worker that
+    precaches the whole shell. Once installed, the app starts and counts with
+    no network at all.
+  - iOS home-screen specifics in `public/index.html`: `viewport-fit=cover`
+    (which is what makes the existing safe-area handling work on web),
+    standalone display with a translucent status bar, double-tap-zoom
+    suppression so fast "+1" tapping does not zoom the page, pull-to-refresh
+    suppression so a gesture cannot reload a running match, and a
+    scheme-aware background so a cold start in a dark hall does not flash
+    white.
+  - New scripts: `npm run web` (dev server) and `npm run build:web` (export
+    plus service worker). CI gained a `build-web` job, since a native-only
+    API slipping into a screen is invisible to lint, typecheck and Jest.
+  - A `Deploy web` workflow publishes the build to GitHub Pages under
+    `/tabletennis-counter/`. This requires Pages to be switched to
+    "Source: GitHub Actions" once in the repository settings.
+
+### Changed
+
+- The match list's delete confirmation is now a `ConfirmDialog` drawn by the
+  app (`src/components/ConfirmDialog.tsx`) instead of a native `Alert.alert`
+  ([ADR 0010](docs/adr/0010-web-target-pwa.md) §3). `Alert` has no
+  `react-native-web` implementation, so on the web build the confirmation
+  would have vanished silently and the delete button would have deleted
+  straight away. The two-step behaviour is unchanged and now identical on all
+  three platforms; the dialog's actions are de-coloured rather than red,
+  per the design system's rule that colour belongs to player identity
+  ([ADR 0009](docs/adr/0009-visual-design-system.md)).
+
+  The delete tests were rewritten to press the dialog's real buttons instead
+  of spying on `Alert`. No assertion about observable behaviour was removed
+  or weakened, and the suite is unchanged in size (98 tests, green).

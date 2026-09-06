@@ -3,13 +3,16 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo/metro-runtime": "~57.0.15",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.11",
     "expo-splash-screen": "~57.0.6",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.2",
-    "react-native-safe-area-context": "~5.7.0"
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@testing-library/react-native": "^14.0.1",
@@ -23,7 +26,8 @@
     "jest-expo": "~57.0.3",
     "prettier": "^3.9.6",
     "react-test-renderer": "19.2.3",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "workbox-cli": "^7.4.1"
   },
   "engines": {
     "node": "^22.13.0 || >=24"
@@ -32,6 +36,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
+    "web": "expo start --web",
+    "build:web": "expo export -p web && workbox generateSW workbox-config.js",
     "lint": "expo lint",
     "test": "jest",
     "typecheck": "tsc --noEmit",

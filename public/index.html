@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!--
+      `viewport-fit=cover` is what makes `env(safe-area-inset-*)` report real
+      values on a notched iPhone. `react-native-safe-area-context` reads those
+      CSS environment variables on web, so this one attribute is what carries
+      ADR 0008's safe-area handling over from native — without it every inset
+      is 0 and the score would sit under the Dynamic Island in standalone
+      mode.
+
+      Zoom is deliberately left enabled (no `user-scalable=no`); double-tap
+      zoom is disabled further down via `touch-action`, which stops a fast
+      "+1, +1" from zooming the page without taking pinch-zoom away from
+      anyone who needs it.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
+    />
+
+    <title>Tabletennis Counter</title>
+    <meta
+      name="description"
+      content="Punkte, Sätze und Spiele eines Tischtennis-Matches mitzählen — offline, lokal auf dem Gerät."
+    />
+
+    <link rel="manifest" href="/tabletennis-counter/manifest.json" />
+
+    <!--
+      The theme colour tints the browser/standalone chrome. There are two,
+      because the app follows the OS scheme (ADR 0009) and a single value
+      would leave a bright bar above a dark table, or the reverse.
+    -->
+    <meta name="theme-color" content="#F4F1EC" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0D1211" media="(prefers-color-scheme: dark)" />
+
+    <!--
+      iOS home-screen app. `mobile-web-app-capable` is the standard name,
+      `apple-mobile-web-app-capable` the one iOS still reads. Safari shows no
+      install prompt, so this only takes effect once the user has gone through
+      Share -> "Zum Home-Bildschirm".
+
+      `black-translucent` lets the app paint under the status bar, which is
+      what the safe-area insets above then compensate for.
+    -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TT Counter" />
+    <link rel="apple-touch-icon" href="/tabletennis-counter/icons/apple-touch-icon.png" />
+
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+
+    <style id="tt-counter-web">
+      /*
+        Paint the ground colour before the bundle has parsed, so a cold start
+        in a dark hall doesn't flash white. The values are `color.bg` from
+        src/theme/palette.ts and have to be kept in step with it by hand —
+        this file cannot import the tokens.
+      */
+      html {
+        background-color: #f4f1ec;
+      }
+      @media (prefers-color-scheme: dark) {
+        html {
+          background-color: #0d1211;
+        }
+      }
+
+      body {
+        /*
+          A pull-down gesture must never reload a running match. On native
+          there is nothing to pull; in a browser there is.
+        */
+        overscroll-behavior: none;
+        /*
+          The phone is tapped fast and repeatedly between rallies. Without
+          this, iOS treats two quick "+1" taps as a double-tap and zooms;
+          `manipulation` drops double-tap zoom while keeping pinch-zoom.
+        */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript> Diese App braucht JavaScript. Bitte aktiviere es, um Matches zu zählen. </noscript>
+    <!-- The root element for your Expo app. -->
+    <div id="root"></div>
+
+    <script>
+      // The Expo dev server (`expo start --web`, port 8081) is skipped: a
+      // precached shell there would serve a stale bundle over the live one
+      // and make edits look like they had no effect. Every other origin —
+      // including a local preview of a real `npm run build:web` output —
+      // registers normally, so offline behaviour is testable before it ships.
+      if ('serviceWorker' in navigator && location.port !== '8081') {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker
+            .register('/tabletennis-counter/service-worker.js', {
+              scope: '/tabletennis-counter/',
+            })
+            .catch(function (error) {
+              // A failed registration must never break the app — it only
+              // costs offline support, and the counter still works online.
+              console.error('Service worker registration failed:', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>
