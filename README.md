@@ -70,7 +70,13 @@ This exports the site to `dist/` and then generates a Workbox service worker
 that precaches the whole app shell. Once installed, the app starts and counts
 with no network connection at all.
 
-The build is hosted on GitHub Pages under the `/tabletennis-counter/` subpath,
+The build is hosted on GitHub Pages at
+<https://ifahrentholz.de/tabletennis-counter/> — the account's Pages user
+site carries the custom domain `ifahrentholz.de`, so project sites hang off
+that origin rather than off `github.io`. Nothing in the build hard-codes an
+origin, so only the subpath matters.
+
+That subpath (`/tabletennis-counter/`)
 which is pinned in three places that must stay in step: `experiments.baseUrl`
 in `app.json`, `start_url`/`scope`/`id` in `public/manifest.json`, and the
 service worker registration path in `public/index.html`.

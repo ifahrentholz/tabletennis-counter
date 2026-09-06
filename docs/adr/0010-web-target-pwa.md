@@ -126,10 +126,18 @@ which is the direction this project's testing decisions ask for (spec,
 
 ### 6. `experiments.baseUrl` pinned to `/tabletennis-counter` for GitHub Pages
 
-The site is served from `https://<user>.github.io/tabletennis-counter/`, a
-subpath rather than a domain root. `baseUrl` prepends that prefix to every
-bundled resource link. The manifest's `start_url`/`scope`/`id` and the
-service worker's registration scope carry the same prefix.
+The site is served from `https://ifahrentholz.de/tabletennis-counter/`, a
+subpath rather than a domain root. (The account's Pages user site carries
+the custom domain `ifahrentholz.de`, so project sites hang off that origin
+instead of `github.io`; the subpath is the repository name either way.)
+`baseUrl` prepends that prefix to every bundled resource link. The
+manifest's `start_url`/`scope`/`id` and the service worker's registration
+scope carry the same prefix.
+
+Nothing in the build hard-codes an origin — every one of those paths is
+origin-relative — so the same artefact works on `github.io`, on the custom
+domain, or on any host serving it from that subpath. HTTPS is what the
+service worker actually requires, and the custom domain serves it.
 
 This value is coupled to the repository name and to nothing else in the
 build — renaming the repository, or moving to a custom domain at the root,

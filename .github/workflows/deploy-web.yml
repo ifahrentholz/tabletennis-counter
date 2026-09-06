@@ -6,9 +6,11 @@ name: Deploy web
 # Settings -> Pages. Until that is done this workflow builds fine but the
 # deploy step fails, because there is no Pages site to deploy into.
 #
-# The site is served from https://<user>.github.io/tabletennis-counter/, so
-# `experiments.baseUrl` in app.json must stay in step with the repository
-# name — see ADR 0010.
+# The site is served from https://ifahrentholz.de/tabletennis-counter/ — the
+# account's Pages user site carries the custom domain ifahrentholz.de, so
+# project sites hang off that origin rather than off github.io. The subpath
+# is still the repository name, so `experiments.baseUrl` in app.json must
+# stay in step with it — see ADR 0010.
 
 on:
   push:
