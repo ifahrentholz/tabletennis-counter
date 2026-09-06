@@ -190,21 +190,13 @@ function PlayerColumn({
         <ScoreNumeral player={player} name={name} points={points} />
         <View style={styles.subScores}>
           <View style={styles.subScoreBlock}>
-            <Text
-              style={styles.subScore}
-              accessibilityLabel={`Sätze ${name}`}
-              numberOfLines={1}
-            >
+            <Text style={styles.subScore} accessibilityLabel={`Sätze ${name}`} numberOfLines={1}>
               Sätze: {setsWon}
             </Text>
           </View>
           <View style={styles.subScoreRule} />
           <View style={styles.subScoreBlock}>
-            <Text
-              style={styles.subScore}
-              accessibilityLabel={`Spiele ${name}`}
-              numberOfLines={1}
-            >
+            <Text style={styles.subScore} accessibilityLabel={`Spiele ${name}`} numberOfLines={1}>
               Spiele: {gamesWon}
             </Text>
           </View>

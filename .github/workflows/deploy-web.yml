@@ -1,0 +1,74 @@
+name: Deploy web
+
+# Builds the PWA and publishes it to GitHub Pages.
+#
+# Requires Pages to be switched to "Source: GitHub Actions" once, under
+# Settings -> Pages. Until that is done this workflow builds fine but the
+# deploy step fails, because there is no Pages site to deploy into.
+#
+# The site is served from https://ifahrentholz.de/tabletennis-counter/ — the
+# account's Pages user site carries the custom domain ifahrentholz.de, so
+# project sites hang off that origin rather than off github.io. The subpath
+# is still the repository name, so `experiments.baseUrl` in app.json must
+# stay in step with it — see ADR 0010.
+
+on:
+  push:
+    branches: [main]
+  # Lets a build be published without waiting for the next push.
+  workflow_dispatch:
+
+# Read the repo, mint the Pages deployment token.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One live deployment at a time. In-progress runs are *not* cancelled, so a
+# half-published site never becomes the live one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build PWA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web bundle and service worker
+        run: npm run build:web
+
+      # Only needed if Pages is ever switched back to serving from a branch:
+      # Jekyll would otherwise skip Expo's `_expo/` output directory, since
+      # it treats a leading underscore as private.
+      - name: Disable Jekyll processing
+        run: touch dist/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

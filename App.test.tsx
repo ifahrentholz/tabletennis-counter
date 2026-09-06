@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { render, screen, userEvent } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 
 import App from './App';
 import { addPoint, createMatch } from './src/domain/match';
@@ -14,11 +13,18 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-/** Stubs the match list's delete confirmation to immediately confirm (spec: "with confirmation"). */
-function confirmDeleteAutomatically() {
-  return jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
-    buttons?.find((button) => button.text === 'Löschen')?.onPress?.();
-  });
+/**
+ * Answers the match list's delete confirmation (spec: "with confirmation").
+ *
+ * The confirmation is a `ConfirmDialog` the app draws itself rather than a
+ * native `Alert` (ADR 0010), so it is answered by pressing a real button
+ * instead of by stubbing a native module.
+ */
+async function answerDeleteConfirmation(
+  user: ReturnType<typeof userEvent.setup>,
+  answer: 'Löschen' | 'Abbrechen',
+) {
+  await user.press(await screen.findByRole('button', { name: answer }));
 }
 
 async function createMatchViaSetup(user: ReturnType<typeof userEvent.setup>) {
@@ -119,7 +125,6 @@ describe('App', () => {
 
   it('deletes a match from the match list, persisting the removal, once the deletion is confirmed', async () => {
     const user = userEvent.setup();
-    confirmDeleteAutomatically();
     await render(<App />);
 
     await createMatchViaSetup(user);
@@ -127,6 +132,7 @@ describe('App', () => {
     await screen.findByRole('button', { name: 'Alice vs Bob' });
 
     await user.press(screen.getByRole('button', { name: 'Alice vs Bob löschen' }));
+    await answerDeleteConfirmation(user, 'Löschen');
 
     expect(screen.queryByRole('button', { name: 'Alice vs Bob' })).not.toBeOnTheScreen();
     expect(await listMatches()).toHaveLength(0);
@@ -134,9 +140,6 @@ describe('App', () => {
 
   it('leaves the match in the list when the delete confirmation is cancelled', async () => {
     const user = userEvent.setup();
-    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
-      buttons?.find((button) => button.text === 'Abbrechen')?.onPress?.();
-    });
     await render(<App />);
 
     await createMatchViaSetup(user);
@@ -144,6 +147,7 @@ describe('App', () => {
     await screen.findByRole('button', { name: 'Alice vs Bob' });
 
     await user.press(screen.getByRole('button', { name: 'Alice vs Bob löschen' }));
+    await answerDeleteConfirmation(user, 'Abbrechen');
 
     expect(await screen.findByRole('button', { name: 'Alice vs Bob' })).toBeOnTheScreen();
     expect(await listMatches()).toHaveLength(1);

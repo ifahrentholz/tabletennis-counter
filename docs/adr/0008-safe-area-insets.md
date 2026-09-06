@@ -163,7 +163,7 @@ which is routed back to this ticket:
 
 2. **Optional future-refactor suggestion (not acted on).** All 5 screens
    now repeat a near-verbatim `<SafeAreaView style={styles.container}
-   testID="...">` root element (decision 3 above). The review suggested a
+testID="...">` root element (decision 3 above). The review suggested a
    shared `ScreenContainer`/`SafeAreaView` wrapper component could reduce
    that repetition in a future refactor. This was already explicitly
    reasoned about and deferred for this ticket's scope by decision 3 above

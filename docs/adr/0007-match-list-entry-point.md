@@ -79,7 +79,7 @@ fixed it:
   `deleteMatch` + updates local list state when it resolves `true`. Nothing
   happens on `false`.
 - The alert names the match (`"Möchtest du „{label}" wirklich löschen?"`)
-  so the confirmation itself confirms *which* match is about to go, rather
+  so the confirmation itself confirms _which_ match is about to go, rather
   than a generic "delete this?" prompt.
 
 Promise-wrapping was chosen over a callback or a second piece of screen
