@@ -20,10 +20,16 @@
  * "swipe/delete gesture (or delete button)" — a button is used here since
  * no gesture-handling dependency exists yet in this project). Per the
  * spec's "with confirmation" requirement, tapping delete first asks via a
- * native `Alert.alert` confirmation (Abbrechen/Löschen); only confirming
- * calls `deleteMatch` and updates local state, so the row disappears
- * without needing a full reload. Cancelling — or dismissing the alert —
- * leaves the match untouched.
+ * `ConfirmDialog` (Abbrechen/Löschen); only confirming calls `deleteMatch`
+ * and updates local state, so the row disappears without needing a full
+ * reload. Cancelling — or dismissing the dialog — leaves the match
+ * untouched.
+ *
+ * That confirmation used to be a native `Alert.alert`, which `react-native-web`
+ * does not implement — on the web build the guard in front of a destructive
+ * action would have disappeared silently. It is now drawn by the app itself
+ * (see ADR 0010), which keeps the identical two-step behaviour on all three
+ * platforms.
  *
  * A single "Neues Match" action opens the setup form (#4) via
  * `onCreateMatch`, closing the loop described by the spec: launch app → see
@@ -37,8 +43,9 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PlayerTag } from '../components/PlayerTag';
 import { Screen } from '../components/Screen';
 import { ScreenActionBar } from '../components/ScreenActionBar';
@@ -60,6 +67,10 @@ function labelFor(stored: StoredMatch): string {
 
 export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenProps) {
   const [matches, setMatches] = useState<StoredMatch[] | null>(null);
+  // The match awaiting deletion confirmation, or `null` when nothing is
+  // pending. Holding the whole `StoredMatch` (rather than just an id) keeps
+  // the dialog's message addressable without a second lookup.
+  const [pendingDelete, setPendingDelete] = useState<StoredMatch | null>(null);
   const styles = useStyles();
 
   useEffect(() => {
@@ -72,23 +83,10 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
     };
   }, []);
 
-  function confirmDelete(label: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      Alert.alert(
-        'Match löschen',
-        `Möchtest du „${label}“ wirklich löschen?`,
-        [
-          { text: 'Abbrechen', style: 'cancel', onPress: () => resolve(false) },
-          { text: 'Löschen', style: 'destructive', onPress: () => resolve(true) },
-        ],
-        { cancelable: true, onDismiss: () => resolve(false) },
-      );
-    });
-  }
-
-  async function handleDelete(id: string, label: string) {
-    const confirmed = await confirmDelete(label);
-    if (!confirmed) return;
+  async function handleConfirmDelete() {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    setPendingDelete(null);
     await deleteMatch(id);
     setMatches((current) => current?.filter((stored) => stored.id !== id) ?? current);
   }
@@ -166,7 +164,7 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`${label} löschen`}
-                  onPress={() => handleDelete(stored.id, label)}
+                  onPress={() => setPendingDelete(stored)}
                   hitSlop={space.xs}
                   style={({ pressed }) => [styles.deleteButton, pressed && styles.deletePressed]}
                 >
@@ -179,6 +177,16 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
       )}
 
       <ScreenActionBar label="Neues Match" onPress={onCreateMatch} />
+
+      <ConfirmDialog
+        visible={pendingDelete !== null}
+        title="Match löschen"
+        message={pendingDelete ? `Möchtest du „${labelFor(pendingDelete)}“ wirklich löschen?` : ''}
+        confirmLabel="Löschen"
+        cancelLabel="Abbrechen"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </Screen>
   );
 }

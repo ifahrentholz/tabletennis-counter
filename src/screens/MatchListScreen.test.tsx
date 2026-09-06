@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { render, screen, userEvent } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 
 import { addPoint, createMatch } from '../domain/match';
 import type { Match, MatchConfig } from '../domain/match';
@@ -16,15 +15,22 @@ afterEach(() => {
 });
 
 /**
- * Stubs the confirmation `Alert.alert` (spec: "Delete a match from the
- * list (with confirmation)") to immediately invoke whichever button
- * matches `buttonText` — simulating the user tapping "Löschen" (confirm)
- * or "Abbrechen" (cancel) without needing a real native alert in tests.
+ * Drives the two-step delete the spec asks for ("Delete a match from the
+ * list (with confirmation)"): taps the row's delete action, then answers
+ * the confirmation dialog the way `answer` says.
+ *
+ * The confirmation is drawn by the app itself rather than by `Alert.alert`
+ * (ADR 0010), so it is now reachable through the same public surface as
+ * every other control here — a role and an accessible name — instead of
+ * needing a native module to be spied on.
  */
-function stubDeleteConfirmation(buttonText: 'Löschen' | 'Abbrechen') {
-  return jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
-    buttons?.find((button) => button.text === buttonText)?.onPress?.();
-  });
+async function deleteMatchNamed(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+  answer: 'Löschen' | 'Abbrechen',
+) {
+  await user.press(screen.getByRole('button', { name: `${label} löschen` }));
+  await user.press(await screen.findByRole('button', { name: answer }));
 }
 
 function makeConfig(overrides: Partial<MatchConfig> = {}): MatchConfig {
@@ -142,16 +148,17 @@ describe('MatchListScreen new match action', () => {
 describe('MatchListScreen delete (with confirmation)', () => {
   it('asks for confirmation naming the match before deleting anything', async () => {
     const user = userEvent.setup();
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const matchId = await seedMatch(createMatch(makeConfig()));
     await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
     await screen.findByRole('button', { name: 'Alice vs Bob' });
 
     await user.press(screen.getByRole('button', { name: 'Alice vs Bob löschen' }));
 
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-    const [, message] = alertSpy.mock.calls[0];
-    expect(message).toContain('Alice vs Bob');
+    // The question names the match it is about, so the wrong row can't be
+    // confirmed away blindly.
+    expect(await screen.findByText(/Alice vs Bob/)).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Löschen' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Abbrechen' })).toBeOnTheScreen();
     // Nothing is deleted until the user confirms.
     expect(screen.getByRole('button', { name: 'Alice vs Bob' })).toBeOnTheScreen();
     expect(await getMatch(matchId)).not.toBeNull();
@@ -159,12 +166,11 @@ describe('MatchListScreen delete (with confirmation)', () => {
 
   it('removes a match from the list and persistence once the deletion is confirmed', async () => {
     const user = userEvent.setup();
-    stubDeleteConfirmation('Löschen');
     const matchId = await seedMatch(createMatch(makeConfig()));
     await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
     await screen.findByRole('button', { name: 'Alice vs Bob' });
 
-    await user.press(screen.getByRole('button', { name: 'Alice vs Bob löschen' }));
+    await deleteMatchNamed(user, 'Alice vs Bob', 'Löschen');
 
     expect(screen.queryByRole('button', { name: 'Alice vs Bob' })).not.toBeOnTheScreen();
     expect(await getMatch(matchId)).toBeNull();
@@ -173,12 +179,11 @@ describe('MatchListScreen delete (with confirmation)', () => {
 
   it('leaves the match in the list and in persistence when the confirmation is cancelled', async () => {
     const user = userEvent.setup();
-    stubDeleteConfirmation('Abbrechen');
     const matchId = await seedMatch(createMatch(makeConfig()));
     await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
     await screen.findByRole('button', { name: 'Alice vs Bob' });
 
-    await user.press(screen.getByRole('button', { name: 'Alice vs Bob löschen' }));
+    await deleteMatchNamed(user, 'Alice vs Bob', 'Abbrechen');
 
     expect(await screen.findByRole('button', { name: 'Alice vs Bob' })).toBeOnTheScreen();
     expect(await getMatch(matchId)).not.toBeNull();
@@ -187,7 +192,6 @@ describe('MatchListScreen delete (with confirmation)', () => {
 
   it('only removes the tapped match, leaving other persisted matches untouched', async () => {
     const user = userEvent.setup();
-    stubDeleteConfirmation('Löschen');
     await seedMatch(createMatch(makeConfig({ playerAName: 'Alice', playerBName: 'Bob' })));
     const keepId = await seedMatch(
       createMatch(makeConfig({ playerAName: 'Carol', playerBName: 'Dave' })),
@@ -195,7 +199,7 @@ describe('MatchListScreen delete (with confirmation)', () => {
     await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
     await screen.findByRole('button', { name: 'Alice vs Bob' });
 
-    await user.press(screen.getByRole('button', { name: 'Alice vs Bob löschen' }));
+    await deleteMatchNamed(user, 'Alice vs Bob', 'Löschen');
 
     expect(screen.queryByRole('button', { name: 'Alice vs Bob' })).not.toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Carol vs Dave' })).toBeOnTheScreen();
