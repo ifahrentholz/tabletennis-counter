@@ -55,6 +55,33 @@ function wonMatch(overrides: Partial<MatchConfig> = {}): Match {
   return match;
 }
 
+/**
+ * Persists a match in the pre-#33-rename shape (ADR 0010 §6): match-level
+ * `games`/`gamesWon` instead of today's `sets`/`setsWon`, same values, old
+ * field names. `saveMatch`'s `Match` parameter type doesn't allow this shape
+ * directly (by design — it's not a valid `Match` anymore), so the legacy
+ * value is built as its own type and only asserted to `Match` at the
+ * `saveMatch` boundary, mirroring what a real pre-rename record already
+ * sitting in `AsyncStorage` looks like once JSON-parsed back in.
+ */
+interface LegacyMatch {
+  config: MatchConfig;
+  games: unknown[];
+  gamesWon: { A: number; B: number };
+  winner: null;
+}
+
+async function seedLegacyMatch(overrides: Partial<MatchConfig> = {}): Promise<string> {
+  const legacy: LegacyMatch = {
+    config: makeConfig(overrides),
+    games: [],
+    gamesWon: { A: 2, B: 1 },
+    winner: null,
+  };
+  const stored = await saveMatch(legacy as unknown as Match);
+  return stored.id;
+}
+
 describe('MatchListScreen listing', () => {
   it('shows every persisted match as "playerAName vs playerBName"', async () => {
     await seedMatch(createMatch(makeConfig({ playerAName: 'Alice', playerBName: 'Bob' })));
@@ -200,6 +227,42 @@ describe('MatchListScreen delete (with confirmation)', () => {
     expect(screen.queryByRole('button', { name: 'Alice vs Bob' })).not.toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Carol vs Dave' })).toBeOnTheScreen();
     expect(await getMatch(keepId)).not.toBeNull();
+  });
+});
+
+describe('MatchListScreen legacy data (#33 follow-up, ADR 0010 §6)', () => {
+  it('renders a pre-rename match without crashing, offering only its name and a delete action', async () => {
+    await seedLegacyMatch({ playerAName: 'Legacy', playerBName: 'Data' });
+
+    await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
+
+    expect(await screen.findByText('Legacy vs Data')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Legacy vs Data löschen' })).toBeOnTheScreen();
+    // No "open" action for a match this list can't safely open.
+    expect(screen.queryByRole('button', { name: 'Legacy vs Data' })).not.toBeOnTheScreen();
+  });
+
+  it('deletes a pre-rename match through the same delete-with-confirmation flow', async () => {
+    const user = userEvent.setup();
+    stubDeleteConfirmation('Löschen');
+    const matchId = await seedLegacyMatch({ playerAName: 'Legacy', playerBName: 'Data' });
+    await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
+    await screen.findByRole('button', { name: 'Legacy vs Data löschen' });
+
+    await user.press(screen.getByRole('button', { name: 'Legacy vs Data löschen' }));
+
+    expect(screen.queryByText('Legacy vs Data')).not.toBeOnTheScreen();
+    expect(await getMatch(matchId)).toBeNull();
+  });
+
+  it('still renders current-format matches normally when a legacy one is also present', async () => {
+    await seedLegacyMatch({ playerAName: 'Legacy', playerBName: 'Data' });
+    await seedMatch(createMatch(makeConfig({ playerAName: 'Alice', playerBName: 'Bob' })));
+
+    await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
+
+    expect(await screen.findByRole('button', { name: 'Alice vs Bob' })).toBeOnTheScreen();
+    expect(screen.getByText('Legacy vs Data')).toBeOnTheScreen();
   });
 });
 

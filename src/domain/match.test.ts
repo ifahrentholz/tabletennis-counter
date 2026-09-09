@@ -38,7 +38,7 @@ function scorePoints(match: Match, player: Player, count: number): Match {
 }
 
 describe('createMatch', () => {
-  it('starts with zero points, zero games and zero sets for both players', () => {
+  it('starts with zero sets, zero games and zero points for both players', () => {
     const match = createMatch(makeConfig());
 
     expect(match.config).toEqual(makeConfig());

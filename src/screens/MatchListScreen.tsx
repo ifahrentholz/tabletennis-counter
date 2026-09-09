@@ -29,6 +29,14 @@
  * `onCreateMatch`, closing the loop described by the spec: launch app → see
  * all matches → resume or start one.
  *
+ * A match saved before the #33 hierarchy rename (ADR 0010 §6) no longer has
+ * the `setsWon` field this screen reads for its score line — it still has
+ * the old field name for the same value. Such a row is detected via
+ * `isCompatible` and rendered with just its player names, a hint, and the
+ * same delete action (no score, no "Match öffnen") so the recovery path ADR
+ * 0010 documents (delete here, then recreate) is actually reachable instead
+ * of throwing and taking down the whole list before it renders.
+ *
  * Each row stacks the two players the way a scoreboard does — the red side
  * above the black side (ADR 0009) — so the same identity a match is played
  * with is visible before it is opened. "Läuft" is the only place ball orange
@@ -43,6 +51,7 @@ import { PlayerTag } from '../components/PlayerTag';
 import { Screen } from '../components/Screen';
 import { ScreenActionBar } from '../components/ScreenActionBar';
 import { isMatchComplete } from '../domain/match';
+import type { PlayerScore } from '../domain/match';
 import { deleteMatch, listMatches } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
 import { hit, makeStyles, radius, space, stroke, type } from '../theme';
@@ -56,6 +65,28 @@ export interface MatchListScreenProps {
 
 function labelFor(stored: StoredMatch): string {
   return `${stored.match.config.playerAName} vs ${stored.match.config.playerBName}`;
+}
+
+function hasPlayerScoreShape(value: unknown): value is PlayerScore {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).A === 'number' &&
+    typeof (value as Record<string, unknown>).B === 'number'
+  );
+}
+
+/**
+ * True when `stored.match` still has the shape this screen reads
+ * (`match.setsWon`, an `{A, B}` pair). A match saved before the #33 rename
+ * (ADR 0010 §6) has no `setsWon` at all — it used `gamesWon` at match level
+ * for the same value, under the old name — so reading `.A`/`.B` on it would
+ * throw before this list even finishes rendering, let alone reaches its
+ * delete button. Callers use this to render such a row as a delete-only
+ * entry instead.
+ */
+function isCompatible(stored: StoredMatch): boolean {
+  return hasPlayerScoreShape((stored.match as { setsWon?: unknown }).setsWon);
 }
 
 export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenProps) {
@@ -123,6 +154,31 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
         >
           {matches.map((stored) => {
             const label = labelFor(stored);
+
+            if (!isCompatible(stored)) {
+              return (
+                <View key={stored.id} style={styles.matchCard}>
+                  <View style={styles.legacyContent}>
+                    <Text style={styles.matchLabel}>Match</Text>
+                    <Text style={styles.legacyName}>{label}</Text>
+                    <Text style={styles.legacyHint}>
+                      Altes Datenformat – kann nicht mehr geöffnet werden. Bitte löschen und neu
+                      anlegen.
+                    </Text>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${label} löschen`}
+                    onPress={() => handleDelete(stored.id, label)}
+                    hitSlop={space.xs}
+                    style={({ pressed }) => [styles.deleteButton, pressed && styles.deletePressed]}
+                  >
+                    <TrashIcon />
+                  </Pressable>
+                </View>
+              );
+            }
+
             const complete = isMatchComplete(stored.match);
             return (
               <View key={stored.id} style={styles.matchCard}>
@@ -326,6 +382,22 @@ const useStyles = makeStyles((theme) => ({
   players: {
     paddingHorizontal: space.lg,
     gap: space.xs,
+  },
+  legacyContent: {
+    paddingTop: space.lg,
+    paddingBottom: space.lg,
+    paddingHorizontal: space.lg,
+    paddingRight: hit.comfortable + space.lg,
+    gap: space.xs,
+  },
+  legacyName: {
+    ...type.body,
+    fontWeight: '700',
+    color: theme.color.textPrimary,
+  },
+  legacyHint: {
+    ...type.micro,
+    color: theme.color.textSecondary,
   },
   playerScoreRow: {
     minHeight: 52,

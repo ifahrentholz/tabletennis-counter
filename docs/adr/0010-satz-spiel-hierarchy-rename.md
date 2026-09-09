@@ -132,10 +132,35 @@ eigene Migrations-ADR fällig.
   unverändert (98 Tests vor und nach dem Rename).
 - `src/screens/SetsOverviewScreen.{tsx,test.tsx}` existieren nicht mehr,
   ersetzt durch `src/screens/GamesOverviewScreen.{tsx,test.tsx}`.
-- ADRs 0002, 0004, 0005, 0006, 0007 beschreiben die _damals_ korrekte (jetzt
-  als vertauscht erkannte) Benennung und wurden nicht rückwirkend
-  umgeschrieben, sondern um einen kurzen Nachtrag ergänzt, der auf dieses
-  ADR verweist — sie bleiben als historisches Protokoll der jeweiligen
-  Entscheidung gültig.
+- ADRs 0002, 0004, 0005, 0006, 0007, 0008 beschreiben die _damals_ korrekte
+  (jetzt als vertauscht erkannte) Benennung bzw. längst entfernte Dateinamen
+  und wurden nicht rückwirkend umgeschrieben, sondern um einen kurzen
+  Nachtrag ergänzt, der auf dieses ADR verweist — sie bleiben als
+  historisches Protokoll der jeweiligen Entscheidung gültig.
 - Vor diesem Ticket gespeicherte Matches sind nach dem Update nicht mehr
   ladbar und müssen gelöscht/neu angelegt werden (siehe Decision 6).
+
+## Nachtrag (2026-09-09, Review-Fix zu Decision 6)
+
+Ein unabhängiges Review des Rename-Diffs hat gezeigt, dass der in Decision 6
+beschriebene Recovery-Pfad ("manuell löschen über den Löschen-Button der
+Match-Liste, dann neu anlegen") in der Praxis nicht begehbar war:
+`MatchListScreen` las für jede Zeile ungeschützt `stored.match.setsWon.A`/
+`.B`, sodass ein Alt-Datensatz (der auf Match-Ebene weiterhin `gamesWon`
+statt `setsWon` hat, siehe Decision 6) die gesamte Liste mit einem
+`TypeError` abstürzen ließ, bevor der Löschen-Button überhaupt sichtbar
+war.
+
+**Fix:** `MatchListScreen` erkennt jetzt zur Laufzeit per Shape-Check
+(`isCompatible`, `src/screens/MatchListScreen.tsx`), ob
+`stored.match.setsWon` die erwartete `{A, B}`-Form hat. Fehlt sie (Alt-
+Datensatz), rendert die betroffene Zeile keinen Score und keine "Match
+öffnen"-Aktion mehr, sondern nur die Spielernamen, einen Hinweistext und den
+Löschen-Button — der über denselben Bestätigungsdialog wie jede andere Zeile
+funktioniert. Damit ist Decision 6 jetzt tatsächlich umsetzbar, ohne deren
+Grundentscheidung zu ändern: es gibt weiterhin **keine** automatische
+Migration oder ein Fallback-Lesepfad, der einen Alt-Datensatz wieder
+öffenbar machen würde (die tiefer verschachtelten `sets`/`games` bleiben
+unlesbar) — behoben wurde ausschließlich das Absturzverhalten der Liste
+selbst, damit der dokumentierte Lösch-Pfad erreichbar ist. Testgedeckt in
+`src/screens/MatchListScreen.test.tsx` ("legacy data").

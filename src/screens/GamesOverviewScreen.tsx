@@ -104,7 +104,7 @@ export function GamesOverviewScreen({
 
       <View style={styles.scoreboard}>
         <View style={styles.scoreboardHeader}>
-          <Text style={styles.scoreboardLabel}>Spielstand</Text>
+          <Text style={styles.scoreboardLabel}>Spiele-Stand</Text>
           {!matchComplete ? (
             <Button
               variant="quiet"

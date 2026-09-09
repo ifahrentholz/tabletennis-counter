@@ -163,7 +163,7 @@ which is routed back to this ticket:
 
 2. **Optional future-refactor suggestion (not acted on).** All 5 screens
    now repeat a near-verbatim `<SafeAreaView style={styles.container}
-   testID="...">` root element (decision 3 above). The review suggested a
+testID="...">` root element (decision 3 above). The review suggested a
    shared `ScreenContainer`/`SafeAreaView` wrapper component could reduce
    that repetition in a future refactor. This was already explicitly
    reasoned about and deferred for this ticket's scope by decision 3 above
@@ -171,3 +171,16 @@ which is routed back to this ticket:
    rather than introducing a new shared wrapper abstraction); the review's
    note is recorded here only as a candidate for a possible future ticket,
    not a change requested against #27.
+
+## Nachtrag (siehe ADR 0010)
+
+Dieses ADR nennt `SetsOverviewScreen`/`SetsOverviewScreen.tsx` (screen 4) als
+eine der 5 Screens, die einen `SafeAreaView`-Root erhalten (Context,
+Decision 3, Consequences). Seit ADR 0010 heißt diese Datei
+`GamesOverviewScreen`/`GamesOverviewScreen.tsx`; `MatchDetailScreen`
+(screen 3) und `GamesOverviewScreen` (screen 4) haben zudem die Rollen
+"games overview"/"sets overview" untereinander getauscht. Die hier
+getroffene Entscheidung (`SafeAreaView`-Root an allen 5 Screens, additive
+edges) ist von diesem Tausch unberührt und gilt unverändert für alle 5
+Screens unter ihren aktuellen Namen. Dieses ADR bleibt als historisches
+Protokoll der damaligen Entscheidung unverändert.
