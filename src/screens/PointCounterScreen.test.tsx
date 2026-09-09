@@ -13,8 +13,8 @@ beforeEach(async () => {
 function makeConfig(overrides: Partial<MatchConfig> = {}): MatchConfig {
   return {
     pointsToWin: 11,
-    setsToWinGame: 6,
-    gamesToWinMatch: 3,
+    gamesToWinSet: 6,
+    setsToWinMatch: 3,
     playerAName: 'Alice',
     playerBName: 'Bob',
     ...overrides,
@@ -40,7 +40,7 @@ async function pressPointsFor(
 }
 
 describe('PointCounterScreen initial render', () => {
-  it('shows both players at 0 for the running set', async () => {
+  it('shows both players at 0 for the running game', async () => {
     const matchId = await seedMatch();
     await render(<PointCounterScreen matchId={matchId} onBack={jest.fn()} />);
 
@@ -60,7 +60,7 @@ describe('PointCounterScreen initial render', () => {
 });
 
 describe('PointCounterScreen scoring a point', () => {
-  it("increments the tapped player's score in the running set", async () => {
+  it("increments the tapped player's score in the running game", async () => {
     const user = userEvent.setup();
     const matchId = await seedMatch();
     await render(<PointCounterScreen matchId={matchId} onBack={jest.fn()} />);
@@ -82,14 +82,14 @@ describe('PointCounterScreen scoring a point', () => {
 
     expect(screen.queryByRole('button', { name: 'Speichern' })).not.toBeOnTheScreen();
     const stored = await getMatch(matchId);
-    const currentGame = stored?.match.games[stored.match.games.length - 1];
-    const currentSet = currentGame?.sets[currentGame.sets.length - 1];
-    expect(currentSet?.points).toEqual({ A: 1, B: 0 });
+    const currentSet = stored?.match.sets[stored.match.sets.length - 1];
+    const currentGame = currentSet?.games[currentSet.games.length - 1];
+    expect(currentGame?.points).toEqual({ A: 1, B: 0 });
   });
 });
 
 describe('PointCounterScreen undo', () => {
-  it('reverses the most recently awarded point when the set is not yet decided', async () => {
+  it('reverses the most recently awarded point when the game is not yet decided', async () => {
     const user = userEvent.setup();
     const matchId = await seedMatch();
     await render(<PointCounterScreen matchId={matchId} onBack={jest.fn()} />);
@@ -104,14 +104,14 @@ describe('PointCounterScreen undo', () => {
     expect(screen.getByLabelText('Punktestand Bob')).toHaveTextContent('0');
 
     const stored = await getMatch(matchId);
-    const currentGame = stored?.match.games[stored.match.games.length - 1];
-    const currentSet = currentGame?.sets[currentGame.sets.length - 1];
-    expect(currentSet?.points).toEqual({ A: 2, B: 0 });
+    const currentSet = stored?.match.sets[stored.match.sets.length - 1];
+    const currentGame = currentSet?.games[currentSet.games.length - 1];
+    expect(currentGame?.points).toEqual({ A: 2, B: 0 });
   });
 });
 
-describe('PointCounterScreen set/game/match win cascade', () => {
-  it('marks the set won at the point limit with a 2-point lead, resetting the next set to 0-0', async () => {
+describe('PointCounterScreen game/set/match win cascade', () => {
+  it('marks the game won at the point limit with a 2-point lead, resetting the next game to 0-0', async () => {
     const user = userEvent.setup();
     const matchId = await seedMatch({ pointsToWin: 11 });
     await render(<PointCounterScreen matchId={matchId} onBack={jest.fn()} />);
@@ -121,11 +121,11 @@ describe('PointCounterScreen set/game/match win cascade', () => {
 
     expect(screen.getByLabelText('Punktestand Alice')).toHaveTextContent('0');
     expect(screen.getByLabelText('Punktestand Bob')).toHaveTextContent('0');
-    expect(screen.getByLabelText('Sätze Alice')).toHaveTextContent('Sätze: 1');
+    expect(screen.getByLabelText('Spiele Alice')).toHaveTextContent('Spiele: 1');
 
     const stored = await getMatch(matchId);
-    expect(stored?.match.games[0].sets[0].winner).toBe('A');
-    expect(stored?.match.games[0].sets).toHaveLength(2);
+    expect(stored?.match.sets[0].games[0].winner).toBe('A');
+    expect(stored?.match.sets[0].games).toHaveLength(2);
   });
 
   it('plays out deuce past the point limit until a 2-point lead is reached', async () => {
@@ -138,18 +138,18 @@ describe('PointCounterScreen set/game/match win cascade', () => {
     await pressPointsFor(user, 'Bob', 10);
     await user.press(screen.getByRole('button', { name: 'Alice +1' })); // 11-10, not yet won
 
-    expect(screen.getByLabelText('Sätze Alice')).toHaveTextContent('Sätze: 0');
+    expect(screen.getByLabelText('Spiele Alice')).toHaveTextContent('Spiele: 0');
 
     await user.press(screen.getByRole('button', { name: 'Bob +1' })); // 11-11
     await user.press(screen.getByRole('button', { name: 'Alice +1' })); // 12-11
     await user.press(screen.getByRole('button', { name: 'Alice +1' })); // 13-11, 2-point lead
 
-    expect(screen.getByLabelText('Sätze Alice')).toHaveTextContent('Sätze: 1');
+    expect(screen.getByLabelText('Spiele Alice')).toHaveTextContent('Spiele: 1');
   });
 
-  it('marks the game won once the configured number of sets is reached', async () => {
+  it('marks the set won once the configured number of games is reached', async () => {
     const user = userEvent.setup();
-    const matchId = await seedMatch({ pointsToWin: 11, setsToWinGame: 3, gamesToWinMatch: 3 });
+    const matchId = await seedMatch({ pointsToWin: 11, gamesToWinSet: 3, setsToWinMatch: 3 });
     await render(<PointCounterScreen matchId={matchId} onBack={jest.fn()} />);
     await screen.findByLabelText('Punktestand Alice');
 
@@ -157,16 +157,16 @@ describe('PointCounterScreen set/game/match win cascade', () => {
     await pressPointsFor(user, 'Alice', 11);
     await pressPointsFor(user, 'Alice', 11);
 
-    expect(screen.getByLabelText('Spiele Alice')).toHaveTextContent('Spiele: 1');
+    expect(screen.getByLabelText('Sätze Alice')).toHaveTextContent('Sätze: 1');
 
     const stored = await getMatch(matchId);
-    expect(stored?.match.games[0].winner).toBe('A');
-    expect(stored?.match.games).toHaveLength(2);
+    expect(stored?.match.sets[0].winner).toBe('A');
+    expect(stored?.match.sets).toHaveLength(2);
   });
 
-  it('marks the match won and final once the configured number of games is reached', async () => {
+  it('marks the match won and final once the configured number of sets is reached', async () => {
     const user = userEvent.setup();
-    const matchId = await seedMatch({ pointsToWin: 11, setsToWinGame: 3, gamesToWinMatch: 1 });
+    const matchId = await seedMatch({ pointsToWin: 11, gamesToWinSet: 3, setsToWinMatch: 1 });
     await render(<PointCounterScreen matchId={matchId} onBack={jest.fn()} />);
     await screen.findByLabelText('Punktestand Alice');
 

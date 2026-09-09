@@ -147,3 +147,15 @@ that can throw.
   property of the override feature, not a bug.
 - Future contributors calling `adjustGameSetsWon` must handle the possible
   `RangeError`; the other three mutators never throw.
+
+## Nachtrag (siehe ADR 0010)
+
+Die in diesem ADR beschriebenen Typ-/Feldnamen (`GameState`/`SetState`,
+`setsToWinGame`/`gamesToWinMatch`, `adjustGameSetsWon`/`adjustMatchGamesWon`,
+`setWinner`/`gameWinnerFrom`) spiegeln die zum Zeitpunkt dieses ADRs benutzte,
+später als vertauscht erkannte Hierarchie-Benennung wider (Domäne meinte
+Match → Spiel → Satz → Punkt, korrekt ist Match → Satz → Spiel → Punkt). Seit
+ADR 0010 tragen `SetState`/`GameState`, `gamesToWinSet`/`setsToWinMatch` und
+`adjustSetGamesWon`/`adjustMatchSetsWon` die richtigen Namen für dieselbe
+Struktur und Logik. Dieses ADR bleibt als historisches Protokoll der
+damaligen Entscheidung unverändert.

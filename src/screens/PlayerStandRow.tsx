@@ -1,10 +1,10 @@
 /**
- * A single player's aggregated stand (games-won or sets-won) with an
+ * A single player's aggregated stand (sets-won or games-won) with an
  * optional inline +/- stepper for edit mode.
  *
- * Shared by `MatchDetailScreen` (games overview, screen 3) and
- * `SetsOverviewScreen` (sets overview, screen 4) so both edit modes render
- * and label their steppers identically; `label` ("Spiele"/"Sätze")
+ * Shared by `MatchDetailScreen` (sets overview, screen 3) and
+ * `GamesOverviewScreen` (games overview, screen 4) so both edit modes render
+ * and label their steppers identically; `label` ("Sätze"/"Spiele")
  * disambiguates which aggregated count is being shown/edited.
  *
  * Carries the same red/black bat identity as every other screen (ADR 0009)

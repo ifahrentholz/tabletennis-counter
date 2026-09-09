@@ -29,7 +29,7 @@ async function createMatchViaSetup(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('App', () => {
-  it('starts on the match list and navigates to the games overview of a newly created match', async () => {
+  it('starts on the match list and navigates to the sets overview of a newly created match', async () => {
     const user = userEvent.setup();
     await render(<App />);
 
@@ -41,24 +41,24 @@ describe('App', () => {
     const all = await listMatches();
     expect(all).toHaveLength(1);
 
-    expect(await screen.findByLabelText('Spiele Alice')).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Sätze Alice')).toBeOnTheScreen();
     expect(screen.queryByPlaceholderText('Name Spieler A')).not.toBeOnTheScreen();
     expect(all[0].match.config.playerAName).toBe('Alice');
     expect(all[0].match.config.playerBName).toBe('Bob');
   });
 
-  it('navigates match list -> games overview -> sets overview -> point counter and back again, one level at a time, landing back on the match list (closes #20)', async () => {
+  it('navigates match list -> sets overview -> games overview -> point counter and back again, one level at a time, landing back on the match list (closes #20)', async () => {
     const user = userEvent.setup();
     await render(<App />);
 
     await createMatchViaSetup(user);
     const [stored] = await listMatches();
 
-    await user.press(await screen.findByRole('button', { name: /Spiel 1/ }));
+    await user.press(await screen.findByRole('button', { name: /Satz 1/ }));
 
-    expect(await screen.findByLabelText('Sätze Alice')).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Spiele Alice')).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: /Satz 1/ }));
+    await user.press(screen.getByRole('button', { name: /Spiel 1/ }));
 
     expect(await screen.findByLabelText('Punktestand Alice')).toBeOnTheScreen();
     expect(screen.getByLabelText('Punktestand Bob')).toBeOnTheScreen();
@@ -66,55 +66,55 @@ describe('App', () => {
     await user.press(screen.getByRole('button', { name: 'Alice +1' }));
 
     const afterPoint = await getMatch(stored.id);
-    const game = afterPoint?.match.games[afterPoint.match.games.length - 1];
-    const set = game?.sets[game.sets.length - 1];
-    expect(set?.points).toEqual({ A: 1, B: 0 });
-
-    await user.press(screen.getByRole('button', { name: 'Zurück' }));
-
-    expect(await screen.findByLabelText('Sätze Alice')).toBeOnTheScreen();
-    expect(screen.queryByLabelText('Punktestand Alice')).not.toBeOnTheScreen();
+    const set = afterPoint?.match.sets[afterPoint.match.sets.length - 1];
+    const game = set?.games[set.games.length - 1];
+    expect(game?.points).toEqual({ A: 1, B: 0 });
 
     await user.press(screen.getByRole('button', { name: 'Zurück' }));
 
     expect(await screen.findByLabelText('Spiele Alice')).toBeOnTheScreen();
-    expect(screen.queryByLabelText('Sätze Alice')).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText('Punktestand Alice')).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Zurück' }));
+
+    expect(await screen.findByLabelText('Sätze Alice')).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Spiele Alice')).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Zurück' }));
 
     expect(await screen.findByRole('button', { name: 'Alice vs Bob' })).toBeOnTheScreen();
-    expect(screen.queryByLabelText('Spiele Alice')).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText('Sätze Alice')).not.toBeOnTheScreen();
     expect(screen.queryByPlaceholderText('Name Spieler A')).not.toBeOnTheScreen();
   });
 
-  it('persists an edit-mode games standing correction made from the games overview', async () => {
+  it('persists an edit-mode sets standing correction made from the sets overview', async () => {
     const user = userEvent.setup();
     await render(<App />);
 
     await createMatchViaSetup(user);
     const [stored] = await listMatches();
-    await screen.findByLabelText('Spiele Alice');
+    await screen.findByLabelText('Sätze Alice');
 
     await user.press(screen.getByRole('button', { name: 'Editieren' }));
-    await user.press(screen.getByRole('button', { name: 'Spiele Alice +1' }));
+    await user.press(screen.getByRole('button', { name: 'Sätze Alice +1' }));
 
-    expect(screen.getByLabelText('Spiele Alice')).toHaveTextContent('Spiele: 1');
+    expect(screen.getByLabelText('Sätze Alice')).toHaveTextContent('Sätze: 1');
     const afterEdit = await getMatch(stored.id);
-    expect(afterEdit?.match.gamesWon).toEqual({ A: 1, B: 0 });
+    expect(afterEdit?.match.setsWon).toEqual({ A: 1, B: 0 });
   });
 
-  it('resumes a match straight from the match list at its current games overview state', async () => {
+  it('resumes a match straight from the match list at its current sets overview state', async () => {
     const user = userEvent.setup();
     await render(<App />);
 
     await createMatchViaSetup(user);
     await user.press(screen.getByRole('button', { name: 'Editieren' }));
-    await user.press(screen.getByRole('button', { name: 'Spiele Alice +1' }));
+    await user.press(screen.getByRole('button', { name: 'Sätze Alice +1' }));
     await user.press(screen.getByRole('button', { name: 'Zurück' }));
 
     await user.press(await screen.findByRole('button', { name: 'Alice vs Bob' }));
 
-    expect(await screen.findByLabelText('Spiele Alice')).toHaveTextContent('Spiele: 1');
+    expect(await screen.findByLabelText('Sätze Alice')).toHaveTextContent('Sätze: 1');
   });
 
   it('deletes a match from the match list, persisting the removal, once the deletion is confirmed', async () => {
@@ -167,12 +167,12 @@ describe('App lock enforcement for a finished match reached fresh from the match
     const user = userEvent.setup();
     let match = createMatch({
       pointsToWin: 11,
-      setsToWinGame: 3,
-      gamesToWinMatch: 1,
+      gamesToWinSet: 3,
+      setsToWinMatch: 1,
       playerAName: 'Alice',
       playerBName: 'Bob',
     });
-    for (let set = 0; set < 3; set += 1) {
+    for (let game = 0; game < 3; game += 1) {
       for (let point = 0; point < 11; point += 1) match = addPoint(match, 'A');
     }
     await saveMatch(match);
@@ -184,12 +184,12 @@ describe('App lock enforcement for a finished match reached fresh from the match
     expect(await screen.findByText('Alice gewinnt das Match!')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Editieren' })).not.toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: /Spiel 1/ }));
+    await user.press(screen.getByRole('button', { name: /Satz 1/ }));
 
-    expect(await screen.findByLabelText('Sätze Alice')).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Spiele Alice')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Editieren' })).not.toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: /Satz 1/ }));
+    await user.press(screen.getByRole('button', { name: /Spiel 1/ }));
 
     expect(await screen.findByLabelText('Punktestand Alice')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Alice +1' })).toBeDisabled();

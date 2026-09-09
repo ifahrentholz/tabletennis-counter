@@ -7,10 +7,10 @@
  * `listMatches` already returns them in that order, so this screen renders
  * them as-is with no re-sorting of its own). Each row is labelled
  * "playerAName vs playerBName"; tapping any row — running or finished —
- * calls `onOpenMatch` with that match's id, handing off to the same games
+ * calls `onOpenMatch` with that match's id, handing off to the same sets
  * overview (`MatchDetailScreen`, screen 3) either way. Read-only enforcement
  * for a finished match is not this screen's job: `isMatchComplete` already
- * makes the entire downstream hierarchy (games overview, sets overview,
+ * makes the entire downstream hierarchy (sets overview, games overview,
  * point counter) read-only regardless of how it was reached, per #2's
  * "freeze on match.winner" contract and #6's `!isMatchComplete` gates. This
  * screen only shows a "Beendet"/"Läuft" hint per row so a finished match is
@@ -48,7 +48,7 @@ import type { StoredMatch } from '../persistence/matchStore';
 import { hit, makeStyles, radius, space, stroke, type } from '../theme';
 
 export interface MatchListScreenProps {
-  /** Navigates into the games overview (screen 3) for the tapped match, running or finished. */
+  /** Navigates into the sets overview (screen 3) for the tapped match, running or finished. */
   onOpenMatch: (matchId: string) => void;
   /** Navigates to the setup form (#4) to start a new match. */
   onCreateMatch: () => void;
@@ -145,14 +145,14 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
                     <View style={styles.playerScoreRow}>
                       <PlayerTag player="A" name={stored.match.config.playerAName} />
                       <Text style={[styles.matchScore, styles.scoreA]}>
-                        {stored.match.gamesWon.A}
+                        {stored.match.setsWon.A}
                       </Text>
                     </View>
                     <View style={styles.scoreDivider} />
                     <View style={styles.playerScoreRow}>
                       <PlayerTag player="B" name={stored.match.config.playerBName} />
                       <Text style={[styles.matchScore, styles.scoreB]}>
-                        {stored.match.gamesWon.B}
+                        {stored.match.setsWon.B}
                       </Text>
                     </View>
                   </View>

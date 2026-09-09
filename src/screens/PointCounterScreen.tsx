@@ -1,26 +1,26 @@
 /**
  * Live point counter screen (screen 5 in the spec's navigation structure).
  *
- * Shows the running point score of the currently active set and lets each
+ * Shows the running point score of the currently active game and lets each
  * player be awarded (+1) or have their last point undone (-1) with a single
- * tap. All win detection (set/game/match, including the deuce rule) is
+ * tap. All win detection (game/set/match, including the deuce rule) is
  * delegated entirely to the scoring engine (`../domain/match.ts`) — this
  * screen only renders whatever the engine currently considers the "current"
- * set/game and calls its pure mutators; it never computes a winner itself.
+ * game/set and calls its pure mutators; it never computes a winner itself.
  *
- * Because `addPoint` already advances the engine's own "current game/current
- * set" pointer the moment a set (or game) is won, this single screen
- * instance carries the player continuously through set after set, game
- * after game, without any navigation of its own — the displayed score
- * resets to 0-0 for the new set automatically. Only once the match itself
+ * Because `addPoint` already advances the engine's own "current set/current
+ * game" pointer the moment a game (or set) is won, this single screen
+ * instance carries the player continuously through game after game, set
+ * after set, without any navigation of its own — the displayed score
+ * resets to 0-0 for the new game automatically. Only once the match itself
  * is won does the engine stop advancing (the hierarchy freezes), which is
  * when this screen shows the match-won banner and disables further input.
  *
  * Owns its own persistence round-trip (loads the match by id on mount,
  * `saveMatch`s immediately after every point/undo — see ADR 0003). It takes
- * only `matchId` (no game/set index) because the engine only ever exposes
- * one live set across the whole match — `SetsOverviewScreen` (#6) always
- * routes here for "the current/active set" regardless of which set row was
+ * only `matchId` (no set/game index) because the engine only ever exposes
+ * one live game across the whole match — `GamesOverviewScreen` (#6) always
+ * routes here for "the current/active game" regardless of which game row was
  * tapped, per ADR 0006 §2.
  *
  * Visually this is the one screen that is a piece of sports equipment rather
@@ -48,17 +48,17 @@ import { makeStyles, radius, space, stroke, type } from '../theme';
 
 export interface PointCounterScreenProps {
   matchId: string;
-  /** Navigates one level up (to the sets overview); never asks to save first. */
+  /** Navigates one level up (to the games overview); never asks to save first. */
   onBack: () => void;
 }
 
-function currentGameOf(match: Match) {
-  return match.games[match.games.length - 1];
+function currentSetOf(match: Match) {
+  return match.sets[match.sets.length - 1];
 }
 
-function currentSetOf(match: Match) {
-  const game = currentGameOf(match);
-  return game.sets[game.sets.length - 1];
+function currentGameOf(match: Match) {
+  const set = currentSetOf(match);
+  return set.games[set.games.length - 1];
 }
 
 export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps) {
@@ -91,8 +91,8 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
   }
 
   const { match } = storedMatch;
-  const currentGame = currentGameOf(match);
   const currentSet = currentSetOf(match);
+  const currentGame = currentGameOf(match);
   const matchComplete = isMatchComplete(match);
   const winnerName =
     match.winner === 'A'
@@ -113,7 +113,7 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
           <Text
             style={[styles.position, matchComplete ? styles.positionDone : styles.positionLive]}
           >
-            Satz {currentGame.sets.length} · Spiel {match.games.length}
+            Spiel {currentSet.games.length} · Satz {match.sets.length}
           </Text>
         </View>
       </View>
@@ -126,9 +126,9 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
         <PlayerColumn
           player="A"
           name={match.config.playerAName}
-          points={currentSet.points.A}
-          setsWon={currentGame.setsWon.A}
-          gamesWon={match.gamesWon.A}
+          points={currentGame.points.A}
+          gamesWon={currentSet.gamesWon.A}
+          setsWon={match.setsWon.A}
           disabled={matchComplete}
           onPoint={() => applyAndPersist((m) => addPoint(m, 'A'))}
           onUndo={() => applyAndPersist(undoPoint)}
@@ -136,9 +136,9 @@ export function PointCounterScreen({ matchId, onBack }: PointCounterScreenProps)
         <PlayerColumn
           player="B"
           name={match.config.playerBName}
-          points={currentSet.points.B}
-          setsWon={currentGame.setsWon.B}
-          gamesWon={match.gamesWon.B}
+          points={currentGame.points.B}
+          gamesWon={currentSet.gamesWon.B}
+          setsWon={match.setsWon.B}
           disabled={matchComplete}
           onPoint={() => applyAndPersist((m) => addPoint(m, 'B'))}
           onUndo={() => applyAndPersist(undoPoint)}
@@ -154,8 +154,8 @@ interface PlayerColumnProps {
   player: Player;
   name: string;
   points: number;
-  setsWon: number;
   gamesWon: number;
+  setsWon: number;
   disabled: boolean;
   onPoint: () => void;
   onUndo: () => void;
@@ -165,8 +165,8 @@ function PlayerColumn({
   player,
   name,
   points,
-  setsWon,
   gamesWon,
+  setsWon,
   disabled,
   onPoint,
   onUndo,
@@ -190,22 +190,14 @@ function PlayerColumn({
         <ScoreNumeral player={player} name={name} points={points} />
         <View style={styles.subScores}>
           <View style={styles.subScoreBlock}>
-            <Text
-              style={styles.subScore}
-              accessibilityLabel={`Sätze ${name}`}
-              numberOfLines={1}
-            >
-              Sätze: {setsWon}
+            <Text style={styles.subScore} accessibilityLabel={`Spiele ${name}`} numberOfLines={1}>
+              Spiele: {gamesWon}
             </Text>
           </View>
           <View style={styles.subScoreRule} />
           <View style={styles.subScoreBlock}>
-            <Text
-              style={styles.subScore}
-              accessibilityLabel={`Spiele ${name}`}
-              numberOfLines={1}
-            >
-              Spiele: {gamesWon}
+            <Text style={styles.subScore} accessibilityLabel={`Sätze ${name}`} numberOfLines={1}>
+              Sätze: {setsWon}
             </Text>
           </View>
         </View>

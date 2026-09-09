@@ -225,3 +225,12 @@ future ticket can address them deliberately rather than rediscover them.
   [#13](https://github.com/ifahrentholz/tabletennis-counter/issues/13));
   known follow-up 2 above is resolved. Known follow-up 3 (empty player name
   validation) remains open for a future ticket.
+
+## Nachtrag (siehe ADR 0010)
+
+Die hier benannten Config-Felder `setsToWinGame`/`gamesToWinMatch` und die
+zugehörigen Preset-Labels spiegeln die zum Zeitpunkt dieses ADRs benutzte,
+später als vertauscht erkannte Hierarchie-Benennung wider. Seit ADR 0010
+heißen diese Felder `gamesToWinSet`/`setsToWinMatch`, und die Presets zeigen
+„Spiele pro Satz"/„Sätze pro Match". Dieses ADR bleibt als historisches
+Protokoll der damaligen Entscheidung unverändert.

@@ -113,3 +113,13 @@ future ticket can address them deliberately rather than rediscover them.
   by literal text content, since two players can legitimately show the same
   number (e.g. 0-0); `userEvent` remains the interaction convention (ADR
   0004 §6).
+
+## Nachtrag (siehe ADR 0010)
+
+Die hier benutzten Begriffe "set"/"game" (z. B. "games/sets overview",
+"current set") folgen der zum Zeitpunkt dieses ADRs benutzten, später als
+vertauscht erkannten Hierarchie-Benennung. Seit ADR 0010 ist die korrekte
+Reihenfolge Match → Satz → Spiel → Punkt (vorher: Match → Spiel → Satz →
+Punkt); wo dieses ADR "set" schreibt, ist nach dem Tausch "game" gemeint und
+umgekehrt. Dieses ADR bleibt als historisches Protokoll der damaligen
+Entscheidung unverändert.

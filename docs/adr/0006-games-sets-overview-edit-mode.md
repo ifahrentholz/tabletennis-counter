@@ -146,3 +146,17 @@ enforcement) to address deliberately.
   per ADR 0004 §5's stated consequence.
 - `PointCounterScreen` itself is unchanged except for its doc comment (no
   behavioral change) and the `onBack` target supplied by its caller.
+
+## Nachtrag (siehe ADR 0010)
+
+Dieses ADR benennt `MatchDetailScreen` als "games overview" (screen 3) und
+`SetsOverviewScreen` als "sets overview" (screen 4), inklusive der Funktionen
+`adjustMatchGamesWon`/`adjustGameSetsWon`. Das folgt der zum Zeitpunkt dieses
+ADRs benutzten, später als vertauscht erkannten Hierarchie-Benennung. Seit
+ADR 0010 zeigt `MatchDetailScreen` die Sätze-Übersicht (screen 3) und das
+umbenannte `GamesOverviewScreen` (vormals `SetsOverviewScreen`) die
+Spiele-Übersicht (screen 4); die Domain-Funktionen heißen jetzt
+`adjustMatchSetsWon`/`adjustSetGamesWon`. Struktur, Verschachtelungstiefe und
+Screen-Reihenfolge sind unverändert geblieben, nur die Bezeichner haben die
+Plätze getauscht. Dieses ADR bleibt als historisches Protokoll der damaligen
+Entscheidung unverändert.

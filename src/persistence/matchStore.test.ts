@@ -6,8 +6,8 @@ import { deleteMatch, getMatch, listMatches, saveMatch } from './matchStore';
 function makeConfig(overrides: Partial<MatchConfig> = {}): MatchConfig {
   return {
     pointsToWin: 11,
-    setsToWinGame: 6,
-    gamesToWinMatch: 3,
+    gamesToWinSet: 6,
+    setsToWinMatch: 3,
     playerAName: 'Alice',
     playerBName: 'Bob',
     ...overrides,
@@ -63,7 +63,7 @@ describe('autosave of state changes', () => {
     expect(updated.updatedAt).toBeGreaterThan(stored.updatedAt);
   });
 
-  it("round-trips a set's pointLog exactly, so undo remains correct after reload", async () => {
+  it("round-trips a game's pointLog exactly, so undo remains correct after reload", async () => {
     const match = createMatch(makeConfig());
     const scored = addPoint(addPoint(addPoint(match, 'A'), 'A'), 'B'); // A:2 B:1
     const stored = await saveMatch(scored);
@@ -71,11 +71,11 @@ describe('autosave of state changes', () => {
     const reloaded = await getMatch(stored.id);
     expect(reloaded).not.toBeNull();
     const reloadedMatch = reloaded!.match;
-    expect(reloadedMatch.games[0].sets[0].pointLog).toEqual(['A', 'A', 'B']);
+    expect(reloadedMatch.sets[0].games[0].pointLog).toEqual(['A', 'A', 'B']);
 
     // Undo correctness after reload depends on the pointLog surviving intact.
     const undone = undoPoint(reloadedMatch);
-    expect(undone.games[0].sets[0].points).toEqual({ A: 2, B: 0 });
+    expect(undone.sets[0].games[0].points).toEqual({ A: 2, B: 0 });
   });
 });
 

@@ -287,3 +287,29 @@ install`), and each of the 5 screens' (`MatchListScreen`,
   See [ADR 0009](docs/adr/0009-visual-design-system.md) for the full decision
   record, including the measured WCAG contrast ratios for both schemes and
   the follow-ups deliberately left alone.
+
+- Corrected the Satz/Spiel hierarchy naming, which had been swapped
+  throughout the app since [#2](https://github.com/ifahrentholz/tabletennis-counter/issues/2)
+  ([#33](https://github.com/ifahrentholz/tabletennis-counter/issues/33)):
+  - The two middle hierarchy levels traded names: a **Match** now consists of
+    **Sätze (Sets)**, a **Satz** of **Spiele (Games)**, a **Spiel** of
+    **Punkte** — previously it was the other way around. The point and match
+    levels, the scoring rules, and the nesting depth are unchanged.
+  - In `src/domain/match.ts`: `GameState`/`SetState` swap to `SetState`/
+    `GameState`; `Match.games`/`gamesWon` become `Match.sets`/`setsWon`;
+    `MatchConfig.setsToWinGame`/`gamesToWinMatch` become `gamesToWinSet`/
+    `setsToWinMatch`; `adjustGameSetsWon`/`adjustMatchGamesWon` become
+    `adjustSetGamesWon`/`adjustMatchSetsWon`.
+  - `src/screens/SetsOverviewScreen.tsx` is renamed to
+    `GamesOverviewScreen.tsx` (it now shows the games list within a set);
+    `MatchDetailScreen` now shows the sets overview. `App.tsx`'s routing and
+    all five screens' German labels (setup presets, overview headers,
+    `PlayerStandRow` labels, the point counter's position readout and
+    sub-scores) are updated to match.
+  - No migration for previously saved matches — see
+    [ADR 0010](docs/adr/0010-satz-spiel-hierarchy-rename.md) decision 6 for
+    why, and how to recover (delete and re-create the match).
+
+  See [ADR 0010](docs/adr/0010-satz-spiel-hierarchy-rename.md) for the full
+  rename rationale and the addenda added to ADRs 0002, 0004, 0005, 0006 and
+  0007, which keep their original text as a historical record.

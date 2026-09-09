@@ -1,5 +1,5 @@
 /**
- * On-device persistence for the match hierarchy (Match/Games/Sets).
+ * On-device persistence for the match hierarchy (Match/Sets/Games).
  *
  * Wraps the pure `Match` domain value (see `../domain/match.ts`) with the
  * identity/timestamp fields persistence needs — `id` and `updatedAt` —

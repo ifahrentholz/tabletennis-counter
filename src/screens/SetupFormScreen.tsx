@@ -3,8 +3,8 @@
  * single form a player fills out before a match starts.
  *
  * Collects the four match settings the domain layer (`../domain/match.ts`)
- * needs to create a `Match` — point limit per set, sets-per-game,
- * games-per-match (all tappable presets, never free-text numbers, so an
+ * needs to create a `Match` — point limit per game, games-per-set,
+ * sets-per-match (all tappable presets, never free-text numbers, so an
  * invalid value can't be entered) and the two players' names (plain free
  * text, no autocomplete/suggestion of previously used names) — and a single
  * "Match starten" button that creates the match, persists it immediately via
@@ -28,12 +28,12 @@ import { saveMatch } from '../persistence/matchStore';
 import { hit, makeStyles, radius, space, stroke, type, useTheme } from '../theme';
 
 const POINTS_TO_WIN_OPTIONS = [11, 21] as const;
-const SETS_TO_WIN_GAME_OPTIONS = [3, 5, 6, 7] as const;
-const GAMES_TO_WIN_MATCH_OPTIONS = [1, 3, 5] as const;
+const GAMES_TO_WIN_SET_OPTIONS = [3, 5, 6, 7] as const;
+const SETS_TO_WIN_MATCH_OPTIONS = [1, 3, 5] as const;
 
 const DEFAULT_POINTS_TO_WIN: MatchConfig['pointsToWin'] = 11;
-const DEFAULT_SETS_TO_WIN_GAME: MatchConfig['setsToWinGame'] = 6;
-const DEFAULT_GAMES_TO_WIN_MATCH: MatchConfig['gamesToWinMatch'] = 3;
+const DEFAULT_GAMES_TO_WIN_SET: MatchConfig['gamesToWinSet'] = 6;
+const DEFAULT_SETS_TO_WIN_MATCH: MatchConfig['setsToWinMatch'] = 3;
 
 export interface SetupFormScreenProps {
   /** Called once the new match has been created and persisted, with its assigned id. */
@@ -42,11 +42,10 @@ export interface SetupFormScreenProps {
 
 export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
   const [pointsToWin, setPointsToWin] = useState<MatchConfig['pointsToWin']>(DEFAULT_POINTS_TO_WIN);
-  const [setsToWinGame, setSetsToWinGame] =
-    useState<MatchConfig['setsToWinGame']>(DEFAULT_SETS_TO_WIN_GAME);
-  const [gamesToWinMatch, setGamesToWinMatch] = useState<MatchConfig['gamesToWinMatch']>(
-    DEFAULT_GAMES_TO_WIN_MATCH,
-  );
+  const [gamesToWinSet, setGamesToWinSet] =
+    useState<MatchConfig['gamesToWinSet']>(DEFAULT_GAMES_TO_WIN_SET);
+  const [setsToWinMatch, setSetsToWinMatch] =
+    useState<MatchConfig['setsToWinMatch']>(DEFAULT_SETS_TO_WIN_MATCH);
   const [playerAName, setPlayerAName] = useState('');
   const [playerBName, setPlayerBName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,8 +70,8 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
     try {
       const config: MatchConfig = {
         pointsToWin,
-        setsToWinGame,
-        gamesToWinMatch,
+        gamesToWinSet,
+        setsToWinMatch,
         playerAName,
         playerBName,
       };
@@ -113,22 +112,22 @@ export function SetupFormScreen({ onMatchCreated }: SetupFormScreenProps) {
             <Text style={styles.sectionMeta}>01</Text>
           </View>
           <PresetGroup
-            groupLabel="Punkte pro Satz"
+            groupLabel="Punkte pro Spiel"
             options={POINTS_TO_WIN_OPTIONS}
             value={pointsToWin}
             onChange={setPointsToWin}
           />
           <PresetGroup
-            groupLabel="Sätze pro Spiel"
-            options={SETS_TO_WIN_GAME_OPTIONS}
-            value={setsToWinGame}
-            onChange={setSetsToWinGame}
+            groupLabel="Spiele pro Satz"
+            options={GAMES_TO_WIN_SET_OPTIONS}
+            value={gamesToWinSet}
+            onChange={setGamesToWinSet}
           />
           <PresetGroup
-            groupLabel="Spiele pro Match"
-            options={GAMES_TO_WIN_MATCH_OPTIONS}
-            value={gamesToWinMatch}
-            onChange={setGamesToWinMatch}
+            groupLabel="Sätze pro Match"
+            options={SETS_TO_WIN_MATCH_OPTIONS}
+            value={setsToWinMatch}
+            onChange={setSetsToWinMatch}
           />
         </View>
 

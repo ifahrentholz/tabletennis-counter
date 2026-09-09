@@ -30,8 +30,8 @@ function stubDeleteConfirmation(buttonText: 'Löschen' | 'Abbrechen') {
 function makeConfig(overrides: Partial<MatchConfig> = {}): MatchConfig {
   return {
     pointsToWin: 11,
-    setsToWinGame: 6,
-    gamesToWinMatch: 3,
+    gamesToWinSet: 6,
+    setsToWinMatch: 3,
     playerAName: 'Alice',
     playerBName: 'Bob',
     ...overrides,
@@ -44,12 +44,12 @@ async function seedMatch(match: Match): Promise<string> {
   return stored.id;
 }
 
-/** A match that has already been won (single game, straight sweep). */
+/** A match that has already been won (single set, straight sweep). */
 function wonMatch(overrides: Partial<MatchConfig> = {}): Match {
   let match = createMatch(
-    makeConfig({ pointsToWin: 11, setsToWinGame: 3, gamesToWinMatch: 1, ...overrides }),
+    makeConfig({ pointsToWin: 11, gamesToWinSet: 3, setsToWinMatch: 1, ...overrides }),
   );
-  for (let set = 0; set < 3; set += 1) {
+  for (let game = 0; game < 3; game += 1) {
     for (let point = 0; point < 11; point += 1) match = addPoint(match, 'A');
   }
   return match;
@@ -88,7 +88,7 @@ describe('MatchListScreen listing', () => {
 });
 
 describe('MatchListScreen resume/read-only navigation', () => {
-  it('opens a running match at its current games overview state when tapped', async () => {
+  it('opens a running match at its current sets overview state when tapped', async () => {
     const user = userEvent.setup();
     const onOpenMatch = jest.fn();
     const matchId = await seedMatch(createMatch(makeConfig()));

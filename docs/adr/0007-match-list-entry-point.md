@@ -79,7 +79,7 @@ fixed it:
   `deleteMatch` + updates local list state when it resolves `true`. Nothing
   happens on `false`.
 - The alert names the match (`"Möchtest du „{label}" wirklich löschen?"`)
-  so the confirmation itself confirms *which* match is about to go, rather
+  so the confirmation itself confirms _which_ match is about to go, rather
   than a generic "delete this?" prompt.
 
 Promise-wrapping was chosen over a callback or a second piece of screen
@@ -145,3 +145,12 @@ next time either of these two test files is touched for other reasons.
   hierarchy (list → setup → games overview → sets overview → point
   counter) now wired end to end, adopting a real navigation library remains
   a candidate follow-up but is not required by anything in this ticket.
+
+## Nachtrag (siehe ADR 0010)
+
+Die hier beschriebene Reihenfolge "games overview → sets overview" folgt der
+zum Zeitpunkt dieses ADRs benutzten, später als vertauscht erkannten
+Hierarchie-Benennung. Seit ADR 0010 lautet die Reihenfolge "sets overview →
+games overview" (Match-Liste → Setup → Sätze-Übersicht → Spiele-Übersicht
+→ Punktezähler); Navigationsstruktur und -tiefe sind unverändert. Dieses ADR
+bleibt als historisches Protokoll der damaligen Entscheidung unverändert.

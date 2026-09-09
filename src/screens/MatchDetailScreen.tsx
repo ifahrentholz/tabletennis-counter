@@ -1,11 +1,11 @@
 /**
- * Games overview screen (screen 3 in the spec's navigation structure).
+ * Sets overview screen (screen 3 in the spec's navigation structure).
  *
- * Shows the match's aggregated games standing for both players and the list
- * of games played so far; tapping a game navigates into its sets overview
- * (screen 4, `SetsOverviewScreen`). While the match is not yet won, an
+ * Shows the match's aggregated sets standing for both players and the list
+ * of sets played so far; tapping a set navigates into its games overview
+ * (screen 4, `GamesOverviewScreen`). While the match is not yet won, an
  * "Editieren" button opens a stepper-based edit mode that manually
- * overwrites the aggregated games-won count via `adjustMatchGamesWon`
+ * overwrites the aggregated sets-won count via `adjustMatchSetsWon`
  * (../domain/match.ts) — it never recalculates the match winner itself,
  * matching the spec's "manual correction, no recalculation" edit-mode
  * contract. The button disappears entirely once the match is won.
@@ -14,14 +14,14 @@
  * whose only job was proving a match id could be routed to and offering a
  * direct shortcut straight into the point counter. That shortcut is
  * superseded by the real navigation hierarchy this ticket introduces:
- * games overview -> sets overview -> point counter.
+ * sets overview -> games overview -> point counter.
  *
  * Like `PointCounterScreen`, this screen owns its own load/persist
  * round-trip (loads by id on mount, `saveMatch`s immediately after every
  * edit) rather than lifting match state into `App`.
  *
  * Visually a normal app screen read at normal distance (ADR 0009), carrying
- * the same red/black bat identity as the counter. The game currently being
+ * the same red/black bat identity as the counter. The set currently being
  * played is the only row marked in ball orange, because it is the only one
  * that is happening now.
  */
@@ -33,7 +33,7 @@ import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
 import { ScreenActionBar } from '../components/ScreenActionBar';
 import { WinnerBanner } from '../components/WinnerBanner';
-import { adjustMatchGamesWon, isMatchComplete } from '../domain/match';
+import { adjustMatchSetsWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
@@ -42,13 +42,17 @@ import { PlayerStandRow } from './PlayerStandRow';
 
 export interface MatchDetailScreenProps {
   matchId: string;
-  /** Navigates into the sets overview (screen 4) for the game at `gameIndex`. */
-  onOpenSetsOverview: (matchId: string, gameIndex: number) => void;
+  /** Navigates into the games overview (screen 4) for the set at `setIndex`. */
+  onOpenGamesOverview: (matchId: string, setIndex: number) => void;
   /** Navigates one level up; never asks to save first. */
   onBack: () => void;
 }
 
-export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: MatchDetailScreenProps) {
+export function MatchDetailScreen({
+  matchId,
+  onOpenGamesOverview,
+  onBack,
+}: MatchDetailScreenProps) {
   const [storedMatch, setStoredMatch] = useState<StoredMatch | null>(null);
   const [editing, setEditing] = useState(false);
   const styles = useStyles();
@@ -63,9 +67,9 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
     };
   }, [matchId]);
 
-  async function adjustGamesWon(player: Player, delta: 1 | -1) {
+  async function adjustSetsWon(player: Player, delta: 1 | -1) {
     if (!storedMatch) return;
-    const updatedMatch = adjustMatchGamesWon(storedMatch.match, player, delta);
+    const updatedMatch = adjustMatchSetsWon(storedMatch.match, player, delta);
     const saved = await saveMatch(updatedMatch, storedMatch.id);
     setStoredMatch(saved);
   }
@@ -97,7 +101,7 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
       >
         <View style={styles.headerRow}>
           <Text style={styles.eyebrow}>Matchübersicht</Text>
-          <Text style={styles.format}>Best of {match.config.gamesToWinMatch * 2 - 1}</Text>
+          <Text style={styles.format}>Best of {match.config.setsToWinMatch * 2 - 1}</Text>
         </View>
 
         <View style={styles.stickyHero}>
@@ -109,9 +113,9 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
               </Text>
             </View>
             <View style={styles.heroScore} accessibilityLabel="Gesamtstand">
-              <Text style={styles.heroScoreNumber}>{match.gamesWon.A}</Text>
+              <Text style={styles.heroScoreNumber}>{match.setsWon.A}</Text>
               <Text style={styles.heroScoreDivider}>:</Text>
-              <Text style={styles.heroScoreNumber}>{match.gamesWon.B}</Text>
+              <Text style={styles.heroScoreNumber}>{match.setsWon.B}</Text>
             </View>
             <View style={[styles.heroPlayer, styles.heroPlayerB]}>
               <Text style={[styles.heroName, styles.titleB]} numberOfLines={1}>
@@ -139,34 +143,34 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
             ) : null}
           </View>
           <PlayerStandRow
-            label="Spiele"
+            label="Sätze"
             player="A"
             name={match.config.playerAName}
-            value={match.gamesWon.A}
+            value={match.setsWon.A}
             editing={editing && !matchComplete}
-            onIncrement={() => adjustGamesWon('A', 1)}
-            onDecrement={() => adjustGamesWon('A', -1)}
+            onIncrement={() => adjustSetsWon('A', 1)}
+            onDecrement={() => adjustSetsWon('A', -1)}
           />
           <View style={styles.standDivider} />
           <PlayerStandRow
-            label="Spiele"
+            label="Sätze"
             player="B"
             name={match.config.playerBName}
-            value={match.gamesWon.B}
+            value={match.setsWon.B}
             editing={editing && !matchComplete}
-            onIncrement={() => adjustGamesWon('B', 1)}
-            onDecrement={() => adjustGamesWon('B', -1)}
+            onIncrement={() => adjustSetsWon('B', 1)}
+            onDecrement={() => adjustSetsWon('B', -1)}
           />
         </View>
 
         <View style={styles.listSection}>
           <View style={styles.listHeader}>
-            <Text style={styles.listHeaderText}>Spielverlauf</Text>
-            <Text style={styles.listHeaderText}>Sätze</Text>
+            <Text style={styles.listHeaderText}>Satzverlauf</Text>
+            <Text style={styles.listHeaderText}>Spiele</Text>
           </View>
           <View style={styles.list}>
-            {match.games.map((game, index) => {
-              const isLive = !matchComplete && !game.winner && index === match.games.length - 1;
+            {match.sets.map((set, index) => {
+              const isLive = !matchComplete && !set.winner && index === match.sets.length - 1;
               return (
                 <Pressable
                   key={index}
@@ -176,22 +180,22 @@ export function MatchDetailScreen({ matchId, onOpenSetsOverview, onBack }: Match
                     pressed && styles.pressed,
                   ]}
                   accessibilityRole="button"
-                  onPress={() => onOpenSetsOverview(matchId, index)}
+                  onPress={() => onOpenGamesOverview(matchId, index)}
                 >
                   <View style={styles.listItemCopy}>
                     <View style={styles.listItemHeading}>
-                      <Text style={styles.listItemLabel}>Spiel {index + 1}</Text>
+                      <Text style={styles.listItemLabel}>Satz {index + 1}</Text>
                       {isLive ? <Text style={styles.liveLabel}>Live</Text> : null}
                     </View>
-                    {game.winner ? (
+                    {set.winner ? (
                       <Text style={styles.listItemNote}>
-                        {game.winner === 'A' ? match.config.playerAName : match.config.playerBName}{' '}
+                        {set.winner === 'A' ? match.config.playerAName : match.config.playerBName}{' '}
                         gewinnt
                       </Text>
                     ) : null}
                   </View>
                   <Text style={styles.listItemScore}>
-                    {game.setsWon.A}:{game.setsWon.B}
+                    {set.gamesWon.A}:{set.gamesWon.B}
                   </Text>
                   <Text style={styles.chevron} accessibilityElementsHidden>
                     ›
