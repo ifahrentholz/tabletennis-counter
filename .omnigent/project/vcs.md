@@ -53,3 +53,10 @@ GitHub-Defaults zusätzlich vorhanden: `bug`, `documentation`, `duplicate`,
 `wontfix`.
 
 Welche Labels neue Issues tragen sollen: **noch nicht vom Menschen bestätigt.**
+
+## Labels für neue Issues (bestätigt von ingo, 2026-09-09)
+
+`ready-for-agent` plus genau ein Bereichs-Label:
+`domain-logic` | `persistence` | `ui` | `ci`.
+Zusätzlich `feature` oder `bug` je Art der Arbeit, `blocked` nur solange eine
+Abhängigkeit offen ist.
