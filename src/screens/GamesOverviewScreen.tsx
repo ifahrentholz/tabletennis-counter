@@ -1,28 +1,28 @@
 /**
- * Sets overview screen (screen 4 in the spec's navigation structure) for a
- * single game.
+ * Games overview screen (screen 4 in the spec's navigation structure) for a
+ * single set.
  *
- * Shows the sets standing for both players within that specific game and
- * the list of sets played in it; tapping a set navigates into the live
+ * Shows the games standing for both players within that specific set and
+ * the list of games played in it; tapping a game navigates into the live
  * point counter (screen 5, `PointCounterScreen`). Per the domain engine
- * (`../domain/match.ts`) there is only ever one live set across the whole
- * match — `addPoint`/`undoPoint` only ever act on `match.games.at(-1)`'s
- * last set — so every set row opens that same point counter regardless of
- * which row was tapped; older, already-decided sets have no live counter of
- * their own to open, matching user story #17's "current/selected set".
+ * (`../domain/match.ts`) there is only ever one live game across the whole
+ * match — `addPoint`/`undoPoint` only ever act on `match.sets.at(-1)`'s
+ * last game — so every game row opens that same point counter regardless of
+ * which row was tapped; older, already-decided games have no live counter of
+ * their own to open, matching user story #17's "current/selected game".
  *
  * While the match is not yet won, an "Editieren" button opens a
- * stepper-based edit mode that manually overwrites this game's aggregated
- * sets-won count per player via `adjustGameSetsWon` — available even for an
- * earlier, already-completed game of the same match, per the spec's edit
- * mode contract. It never recalculates this game's winner. The button
+ * stepper-based edit mode that manually overwrites this set's aggregated
+ * games-won count per player via `adjustSetGamesWon` — available even for an
+ * earlier, already-completed set of the same match, per the spec's edit
+ * mode contract. It never recalculates this set's winner. The button
  * disappears entirely once the match is won.
  *
  * Like `PointCounterScreen` and `MatchDetailScreen`, this screen owns its
  * own load/persist round-trip.
  *
  * Visually a normal app screen read at normal distance (ADR 0009), carrying
- * the same red/black bat identity as the counter. The set currently being
+ * the same red/black bat identity as the counter. The game currently being
  * played is the only row marked in ball orange, because it is the only one
  * that is happening now.
  */
@@ -33,29 +33,29 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
 import { ScreenActionBar } from '../components/ScreenActionBar';
-import { adjustGameSetsWon, isMatchComplete } from '../domain/match';
+import { adjustSetGamesWon, isMatchComplete } from '../domain/match';
 import type { Player } from '../domain/match';
 import { getMatch, saveMatch } from '../persistence/matchStore';
 import type { StoredMatch } from '../persistence/matchStore';
 import { makeStyles, radius, space, stroke, type } from '../theme';
 import { PlayerStandRow } from './PlayerStandRow';
 
-export interface SetsOverviewScreenProps {
+export interface GamesOverviewScreenProps {
   matchId: string;
-  /** Index into `match.games` of the game whose sets standing this shows. */
-  gameIndex: number;
+  /** Index into `match.sets` of the set whose games standing this shows. */
+  setIndex: number;
   /** Navigates into the live point counter (screen 5). */
   onOpenPointCounter: (matchId: string) => void;
-  /** Navigates one level up (to the games overview); never asks to save first. */
+  /** Navigates one level up (to the sets overview); never asks to save first. */
   onBack: () => void;
 }
 
-export function SetsOverviewScreen({
+export function GamesOverviewScreen({
   matchId,
-  gameIndex,
+  setIndex,
   onOpenPointCounter,
   onBack,
-}: SetsOverviewScreenProps) {
+}: GamesOverviewScreenProps) {
   const [storedMatch, setStoredMatch] = useState<StoredMatch | null>(null);
   const [editing, setEditing] = useState(false);
   const styles = useStyles();
@@ -70,41 +70,41 @@ export function SetsOverviewScreen({
     };
   }, [matchId]);
 
-  async function adjustSetsWon(player: Player, delta: 1 | -1) {
+  async function adjustGamesWon(player: Player, delta: 1 | -1) {
     if (!storedMatch) return;
-    const updatedMatch = adjustGameSetsWon(storedMatch.match, gameIndex, player, delta);
+    const updatedMatch = adjustSetGamesWon(storedMatch.match, setIndex, player, delta);
     const saved = await saveMatch(updatedMatch, storedMatch.id);
     setStoredMatch(saved);
   }
 
   if (!storedMatch) {
     return (
-      <Screen testID="sets-overview-safe-area" style={styles.screen}>
+      <Screen testID="games-overview-safe-area" style={styles.screen}>
         <Text style={styles.loading}>Lade…</Text>
       </Screen>
     );
   }
 
   const { match } = storedMatch;
-  const game = match.games[gameIndex];
+  const set = match.sets[setIndex];
   const matchComplete = isMatchComplete(match);
-  const isCurrentGame = gameIndex === match.games.length - 1;
+  const isCurrentSet = setIndex === match.sets.length - 1;
 
   return (
-    <Screen testID="sets-overview-safe-area" style={styles.screen}>
+    <Screen testID="games-overview-safe-area" style={styles.screen}>
       <View style={styles.headerRow}>
-        <Text style={styles.eyebrow}>Satzübersicht</Text>
-        <Text style={styles.format}>First to {match.config.setsToWinGame}</Text>
+        <Text style={styles.eyebrow}>Spielübersicht</Text>
+        <Text style={styles.format}>First to {match.config.gamesToWinSet}</Text>
       </View>
 
       <View style={styles.hero}>
         <Text style={styles.heroLabel}>Match Center</Text>
-        <Text style={styles.title}>Spiel {gameIndex + 1}</Text>
+        <Text style={styles.title}>Satz {setIndex + 1}</Text>
       </View>
 
       <View style={styles.scoreboard}>
         <View style={styles.scoreboardHeader}>
-          <Text style={styles.scoreboardLabel}>Satzstand</Text>
+          <Text style={styles.scoreboardLabel}>Spielstand</Text>
           {!matchComplete ? (
             <Button
               variant="quiet"
@@ -115,29 +115,29 @@ export function SetsOverviewScreen({
           ) : null}
         </View>
         <PlayerStandRow
-          label="Sätze"
+          label="Spiele"
           player="A"
           name={match.config.playerAName}
-          value={game.setsWon.A}
+          value={set.gamesWon.A}
           editing={editing && !matchComplete}
-          onIncrement={() => adjustSetsWon('A', 1)}
-          onDecrement={() => adjustSetsWon('A', -1)}
+          onIncrement={() => adjustGamesWon('A', 1)}
+          onDecrement={() => adjustGamesWon('A', -1)}
         />
         <View style={styles.standDivider} />
         <PlayerStandRow
-          label="Sätze"
+          label="Spiele"
           player="B"
           name={match.config.playerBName}
-          value={game.setsWon.B}
+          value={set.gamesWon.B}
           editing={editing && !matchComplete}
-          onIncrement={() => adjustSetsWon('B', 1)}
-          onDecrement={() => adjustSetsWon('B', -1)}
+          onIncrement={() => adjustGamesWon('B', 1)}
+          onDecrement={() => adjustGamesWon('B', -1)}
         />
       </View>
 
       <View style={styles.listSection}>
         <View style={styles.listHeader}>
-          <Text style={styles.listHeaderText}>Satzverlauf</Text>
+          <Text style={styles.listHeaderText}>Spielverlauf</Text>
           <Text style={styles.listHeaderText}>Punkte</Text>
         </View>
         <ScrollView
@@ -145,9 +145,9 @@ export function SetsOverviewScreen({
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
         >
-          {game.sets.map((set, index) => {
+          {set.games.map((game, index) => {
             const isLive =
-              !matchComplete && isCurrentGame && !set.winner && index === game.sets.length - 1;
+              !matchComplete && isCurrentSet && !game.winner && index === set.games.length - 1;
             return (
               <Pressable
                 key={index}
@@ -161,18 +161,18 @@ export function SetsOverviewScreen({
               >
                 <View style={styles.listItemCopy}>
                   <View style={styles.listItemHeading}>
-                    <Text style={styles.listItemLabel}>Satz {index + 1}</Text>
+                    <Text style={styles.listItemLabel}>Spiel {index + 1}</Text>
                     {isLive ? <Text style={styles.liveLabel}>Live</Text> : null}
                   </View>
-                  {set.winner ? (
+                  {game.winner ? (
                     <Text style={styles.listItemNote}>
-                      {set.winner === 'A' ? match.config.playerAName : match.config.playerBName}{' '}
+                      {game.winner === 'A' ? match.config.playerAName : match.config.playerBName}{' '}
                       gewinnt
                     </Text>
                   ) : null}
                 </View>
                 <Text style={styles.listItemScore}>
-                  {set.points.A}:{set.points.B}
+                  {game.points.A}:{game.points.B}
                 </Text>
                 <Text style={styles.chevron} accessibilityElementsHidden>
                   ›

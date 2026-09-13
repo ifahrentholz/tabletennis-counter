@@ -36,8 +36,8 @@ async function deleteMatchNamed(
 function makeConfig(overrides: Partial<MatchConfig> = {}): MatchConfig {
   return {
     pointsToWin: 11,
-    setsToWinGame: 6,
-    gamesToWinMatch: 3,
+    gamesToWinSet: 6,
+    setsToWinMatch: 3,
     playerAName: 'Alice',
     playerBName: 'Bob',
     ...overrides,
@@ -50,12 +50,43 @@ async function seedMatch(match: Match): Promise<string> {
   return stored.id;
 }
 
-/** A match that has already been won (single game, straight sweep). */
+/**
+ * Writes a match in the pre-#33 persisted shape straight into storage.
+ *
+ * `saveMatch` can only write the current shape, so the raw storage key is
+ * the only way to reproduce what an older build left on a real device:
+ * back then a `Match` held "games" holding "sets", with `gamesWon`/
+ * `setsWon` and `setsToWinGame`/`gamesToWinMatch` (see ADR 0011).
+ */
+async function seedLegacyMatch(id = 'legacy-match'): Promise<string> {
+  await AsyncStorage.setItem(
+    `@tabletennis-counter/match/${id}`,
+    JSON.stringify({
+      id,
+      updatedAt: 1_000,
+      match: {
+        config: {
+          pointsToWin: 11,
+          setsToWinGame: 6,
+          gamesToWinMatch: 3,
+          playerAName: 'Alice',
+          playerBName: 'Bob',
+        },
+        games: [{ sets: [], setsWon: { A: 4, B: 2 }, winner: 'A' }],
+        gamesWon: { A: 2, B: 1 },
+        winner: null,
+      },
+    }),
+  );
+  return id;
+}
+
+/** A match that has already been won (single set, straight sweep). */
 function wonMatch(overrides: Partial<MatchConfig> = {}): Match {
   let match = createMatch(
-    makeConfig({ pointsToWin: 11, setsToWinGame: 3, gamesToWinMatch: 1, ...overrides }),
+    makeConfig({ pointsToWin: 11, gamesToWinSet: 3, setsToWinMatch: 1, ...overrides }),
   );
-  for (let set = 0; set < 3; set += 1) {
+  for (let game = 0; game < 3; game += 1) {
     for (let point = 0; point < 11; point += 1) match = addPoint(match, 'A');
   }
   return match;
@@ -91,10 +122,25 @@ describe('MatchListScreen listing', () => {
 
     expect(await screen.findByText('Noch keine Matches vorhanden.')).toBeOnTheScreen();
   });
+
+  it('shows a match persisted before the #33 rename, at its migrated sets score', async () => {
+    await seedLegacyMatch();
+
+    await render(<MatchListScreen onOpenMatch={jest.fn()} onCreateMatch={jest.fn()} />);
+
+    // This screen is the app's entry point and reads `match.setsWon`, which
+    // a pre-#33 record spells `gamesWon` — without the store's migration it
+    // is the first thing that breaks, and it breaks for every match at once.
+    expect(await screen.findByRole('button', { name: 'Alice vs Bob' })).toBeOnTheScreen();
+    // The legacy record's `gamesWon: { A: 2, B: 1 }` is today's sets score.
+    expect(screen.getByText('2')).toBeOnTheScreen();
+    expect(screen.getByText('1')).toBeOnTheScreen();
+    expect(screen.getByText('Läuft')).toBeOnTheScreen();
+  });
 });
 
 describe('MatchListScreen resume/read-only navigation', () => {
-  it('opens a running match at its current games overview state when tapped', async () => {
+  it('opens a running match at its current sets overview state when tapped', async () => {
     const user = userEvent.setup();
     const onOpenMatch = jest.fn();
     const matchId = await seedMatch(createMatch(makeConfig()));

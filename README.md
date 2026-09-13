@@ -1,7 +1,7 @@
 # Tabletennis Counter
 
 An app (React Native via Expo, Managed Workflow) for keeping score during
-table tennis matches — points, sets and games, following official scoring
+table tennis matches — points, games and sets, following official scoring
 rules (including deuce) — with local, on-device persistence.
 
 Runs on **iOS**, **Android** and in the **browser**, from a single codebase.
@@ -150,7 +150,7 @@ GitHub Actions — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ```
 App.tsx                  # App entry; local routing: match list -> setup ->
-                          # games overview -> sets overview -> point counter
+                          # sets overview -> games overview -> point counter
 public/                   # Copied verbatim into the web build
   index.html              # HTML template for the SPA output: manifest link,
                           # iOS home-screen meta, service worker registration
@@ -161,19 +161,19 @@ src/
   appInfo.ts              # Example pure-logic module (Jest unit test seam)
   PlaceholderScreen.tsx   # Unused ticket #1 scaffolding example (RNTL component test seam)
   domain/
-    match.ts              # Pure scoring domain engine (Match/Game/Set)
+    match.ts              # Pure scoring domain engine (Match/Set/Game)
   persistence/
     matchStore.ts         # On-device match persistence (list/get/save/delete)
   screens/
     MatchListScreen.tsx     # Match list (screen 1, app entry point): resume/
                             # delete matches, status hint, "Neues Match"
     SetupFormScreen.tsx     # Match setup form: presets, player names, "Match starten"
-    MatchDetailScreen.tsx   # Games overview (screen 3): games list, per-player
-                            # gamesWon, edit mode
-    SetsOverviewScreen.tsx  # Sets overview (screen 4): a game's sets list,
-                            # per-player setsWon, edit mode
+    MatchDetailScreen.tsx   # Sets overview (screen 3): sets list, per-player
+                            # setsWon, edit mode
+    GamesOverviewScreen.tsx # Games overview (screen 4): a set's games list,
+                            # per-player gamesWon, edit mode
     PlayerStandRow.tsx      # Shared player-name + count (+/- stepper in edit
                             # mode) row, used by both overview screens
     PointCounterScreen.tsx  # Live point counter (screen 5): +1/-1 scoring,
-                            # automatic set/game/match win detection
+                            # automatic game/set/match win detection
 ```
