@@ -34,37 +34,37 @@ beforeEach(async () => {
 });
 
 describe('SetupFormScreen presets', () => {
-  it('defaults sets-per-game to 6 and games-per-match to 3', async () => {
+  it('defaults games-per-set to 6 and sets-per-match to 3', async () => {
     await render(<SetupFormScreen onMatchCreated={jest.fn()} />);
 
     expect(
-      screen.getByRole('radio', { name: 'Sätze pro Spiel 6', checked: true }),
+      screen.getByRole('radio', { name: 'Spiele pro Satz 6', checked: true }),
     ).toBeOnTheScreen();
     expect(
-      screen.getByRole('radio', { name: 'Spiele pro Match 3', checked: true }),
+      screen.getByRole('radio', { name: 'Sätze pro Match 3', checked: true }),
     ).toBeOnTheScreen();
   });
 
   it('offers 11 and 21 as the only point-limit presets', async () => {
     await render(<SetupFormScreen onMatchCreated={jest.fn()} />);
 
-    expect(screen.getByRole('radio', { name: 'Punkte pro Satz 11' })).toBeOnTheScreen();
-    expect(screen.getByRole('radio', { name: 'Punkte pro Satz 21' })).toBeOnTheScreen();
+    expect(screen.getByRole('radio', { name: 'Punkte pro Spiel 11' })).toBeOnTheScreen();
+    expect(screen.getByRole('radio', { name: 'Punkte pro Spiel 21' })).toBeOnTheScreen();
   });
 
-  it('offers 3/5/6/7 as the sets-per-game presets', async () => {
+  it('offers 3/5/6/7 as the games-per-set presets', async () => {
     await render(<SetupFormScreen onMatchCreated={jest.fn()} />);
 
     for (const option of [3, 5, 6, 7]) {
-      expect(screen.getByRole('radio', { name: `Sätze pro Spiel ${option}` })).toBeOnTheScreen();
+      expect(screen.getByRole('radio', { name: `Spiele pro Satz ${option}` })).toBeOnTheScreen();
     }
   });
 
-  it('offers 1/3/5 as the games-per-match presets', async () => {
+  it('offers 1/3/5 as the sets-per-match presets', async () => {
     await render(<SetupFormScreen onMatchCreated={jest.fn()} />);
 
     for (const option of [1, 3, 5]) {
-      expect(screen.getByRole('radio', { name: `Spiele pro Match ${option}` })).toBeOnTheScreen();
+      expect(screen.getByRole('radio', { name: `Sätze pro Match ${option}` })).toBeOnTheScreen();
     }
   });
 
@@ -72,13 +72,13 @@ describe('SetupFormScreen presets', () => {
     const user = userEvent.setup();
     await render(<SetupFormScreen onMatchCreated={jest.fn()} />);
 
-    await user.press(screen.getByRole('radio', { name: 'Punkte pro Satz 21' }));
+    await user.press(screen.getByRole('radio', { name: 'Punkte pro Spiel 21' }));
 
     expect(
-      screen.getByRole('radio', { name: 'Punkte pro Satz 21', checked: true }),
+      screen.getByRole('radio', { name: 'Punkte pro Spiel 21', checked: true }),
     ).toBeOnTheScreen();
     expect(
-      screen.getByRole('radio', { name: 'Punkte pro Satz 11', checked: false }),
+      screen.getByRole('radio', { name: 'Punkte pro Spiel 11', checked: false }),
     ).toBeOnTheScreen();
   });
 });
@@ -116,9 +116,9 @@ describe('SetupFormScreen "Match starten"', () => {
     const onMatchCreated = jest.fn();
     await render(<SetupFormScreen onMatchCreated={onMatchCreated} />);
 
-    await user.press(screen.getByRole('radio', { name: 'Punkte pro Satz 21' }));
-    await user.press(screen.getByRole('radio', { name: 'Sätze pro Spiel 5' }));
-    await user.press(screen.getByRole('radio', { name: 'Spiele pro Match 1' }));
+    await user.press(screen.getByRole('radio', { name: 'Punkte pro Spiel 21' }));
+    await user.press(screen.getByRole('radio', { name: 'Spiele pro Satz 5' }));
+    await user.press(screen.getByRole('radio', { name: 'Sätze pro Match 1' }));
     await user.type(screen.getByPlaceholderText('Name Spieler A'), 'Alice');
     await user.type(screen.getByPlaceholderText('Name Spieler B'), 'Bob');
 
@@ -131,8 +131,8 @@ describe('SetupFormScreen "Match starten"', () => {
     expect(stored).not.toBeNull();
     expect(stored?.match.config).toEqual({
       pointsToWin: 21,
-      setsToWinGame: 5,
-      gamesToWinMatch: 1,
+      gamesToWinSet: 5,
+      setsToWinMatch: 1,
       playerAName: 'Alice',
       playerBName: 'Bob',
     });
@@ -152,8 +152,8 @@ describe('SetupFormScreen "Match starten"', () => {
     const stored = await getMatch(matchId);
     expect(stored?.match.config).toMatchObject({
       pointsToWin: 11,
-      setsToWinGame: 6,
-      gamesToWinMatch: 3,
+      gamesToWinSet: 6,
+      setsToWinMatch: 3,
     });
   });
 });

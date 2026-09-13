@@ -331,3 +331,34 @@ install`), and each of the 5 screens' (`MatchListScreen`,
   The delete tests were rewritten to press the dialog's real buttons instead
   of spying on `Alert`. No assertion about observable behaviour was removed
   or weakened, and the suite is unchanged in size (98 tests, green).
+
+- The two middle levels of the counting hierarchy were named the wrong way
+  round and are now inverted throughout
+  ([#33](https://github.com/ifahrentholz/tabletennis-counter/issues/33),
+  [ADR 0011](docs/adr/0011-hierarchy-naming-match-set-game.md)). The app used
+  to say a "Spiel" contains "Sätze"; correct is **Match → Sätze → Spiele →
+  Punkte**. The swap covers the German labels (setup form presets now read
+  "Punkte pro Spiel" / "Spiele pro Satz" / "Sätze pro Match"; screen 3 is the
+  Satzübersicht, screen 4 the Spielübersicht of one Satz; the counter's
+  position line reads "Spiel n · Satz m") as well as the identifiers behind
+  them: `Match.sets`/`setsWon`, `SetState { games, gamesWon }`,
+  `GameState { points, pointLog }`, `gamesToWinSet`, `setsToWinMatch`,
+  `adjustSetGamesWon`, `adjustMatchSetsWon`, and
+  `SetsOverviewScreen` → `GamesOverviewScreen`.
+
+  Naming only: no scoring rule, preset value, default, layout or user flow
+  changed.
+
+  Matches persisted by an earlier build keep working. Since `matchStore`
+  stores the domain value verbatim, the old field names are also the old
+  storage format, so reads now upgrade a pre-#33 record to the current names
+  (`getMatch`/`listMatches` → `parseStored`). It is a pure field rename with
+  no recomputation — the nesting, every aggregated count and every point log
+  carry over untouched, so a migrated match cannot change its own result —
+  and it is applied on read only; the next autosave writes the current shape
+  by itself. Without it the match list, the app's entry point, would have
+  thrown on every stored match at once.
+
+  The suite grew from 98 to 110 tests: one pins the point counter's position
+  line, four cover the two overview screens' headings and formats, six feed
+  the store real pre-#33 JSON, and one renders the match list from it.
