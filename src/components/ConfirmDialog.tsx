@@ -15,8 +15,13 @@
  * buttons — de-coloured, exactly as the design system asks for destructive
  * controls — and the weight sits on the wording, not on a colour.
  *
- * Purely presentational — props in, view out. It holds no visibility state
- * of its own; the caller owns `visible` and both callbacks.
+ * Purely presentational — props in, view out. It holds no state of its own,
+ * not even whether it is shown: it is shown exactly when it is rendered, so
+ * the caller decides by mounting it rather than by toggling a prop. That
+ * keeps React Native's `Modal`, and the module graph behind it, out of the
+ * host screen entirely while no question is pending — which is almost
+ * always. On the match list, the app's entry point, that is worth about a
+ * quarter of its first render.
  */
 
 import { Modal, Pressable, Text, View } from 'react-native';
@@ -25,7 +30,6 @@ import { makeStyles, radius, space, stroke, type } from '../theme';
 import { Button } from './Button';
 
 export interface ConfirmDialogProps {
-  visible: boolean;
   /** Short headline, e.g. `Match löschen`. */
   title: string;
   /** The full question, naming what is about to happen. */
@@ -40,7 +44,6 @@ export interface ConfirmDialogProps {
 }
 
 export function ConfirmDialog({
-  visible,
   title,
   message,
   confirmLabel,
@@ -52,7 +55,7 @@ export function ConfirmDialog({
 
   return (
     <Modal
-      visible={visible}
+      visible
       transparent
       animationType="fade"
       // Android's hardware back button and the web's Escape key both land

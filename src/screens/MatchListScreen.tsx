@@ -178,15 +178,19 @@ export function MatchListScreen({ onOpenMatch, onCreateMatch }: MatchListScreenP
 
       <ScreenActionBar label="Neues Match" onPress={onCreateMatch} />
 
-      <ConfirmDialog
-        visible={pendingDelete !== null}
-        title="Match löschen"
-        message={pendingDelete ? `Möchtest du „${labelFor(pendingDelete)}“ wirklich löschen?` : ''}
-        confirmLabel="Löschen"
-        cancelLabel="Abbrechen"
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setPendingDelete(null)}
-      />
+      {/* Mounted only while a question is actually pending — see
+          `ConfirmDialog`'s own note. Rendering it unconditionally dragged
+          RN's `Modal` into this screen's first render for nothing. */}
+      {pendingDelete !== null ? (
+        <ConfirmDialog
+          title="Match löschen"
+          message={`Möchtest du „${labelFor(pendingDelete)}“ wirklich löschen?`}
+          confirmLabel="Löschen"
+          cancelLabel="Abbrechen"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      ) : null}
     </Screen>
   );
 }

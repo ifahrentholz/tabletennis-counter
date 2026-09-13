@@ -186,6 +186,23 @@ so entries are grouped as `[Unreleased]` until the first tag.
 
 ### Fixed
 
+- The match list no longer mounts the delete confirmation while nothing is
+  pending. `ConfirmDialog` lost its `visible` prop and is now shown by being
+  rendered at all, so React Native's `Modal` — and the module graph behind
+  it — stays out of the app's entry screen until a delete is actually asked
+  about. Measured at roughly a quarter off that screen's first render under
+  Jest with a cold transform cache (1.86s → 1.41s); the two-step delete
+  behaviour and its tests are unchanged.
+
+  In the same pass, `testTimeout` was raised from Jest's 5s default to 15s
+  (`jest.config.js`, with the measurements behind it). The suite had tests
+  legitimately sitting at 4.8s — the point counter's win cascades drive 33
+  taps through `userEvent`, whose delay is wall-clock — and the first test of
+  each component file additionally pays for module init against a cold cache,
+  which is what CI has on every run. That combination had been failing CI
+  intermittently on the same commit. No assertion is weakened: "the element
+  never appeared" is still bounded by RNTL's 1s `waitFor`.
+
 - Re-entrancy guard on the setup form's "Match starten" button
   ([#12](https://github.com/ifahrentholz/tabletennis-counter/issues/12)),
   in `src/screens/SetupFormScreen.tsx`:
